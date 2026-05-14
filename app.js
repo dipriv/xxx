@@ -1,7 +1,7 @@
 // CONFIGURAÇÃO DE ACESSO
 const AUTH = {
-    user: "admin",
-    pass: "1234",
+    user: "dipriv",
+    pass: "arcnet2154",
     tempoLimite: 40 * 60 * 1000 // 40 minutos em milissegundos
 };
 
