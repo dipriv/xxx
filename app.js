@@ -116,27 +116,15 @@ function openPlayer(link, titulo) {
     const wrapper = document.getElementById('video-wrapper');
     document.getElementById('modal-title').innerText = titulo;
 
+    // Converte links normais do YouTube para Embed se necessário
     let embedUrl = link;
     if(link.includes('youtube.com/watch?v=')) {
         embedUrl = link.replace('watch?v=', 'embed/');
     }
 
-    // Criamos o HTML com a camada protetora (shield)
-    // O sandbox abaixo é restritivo e impede o redirecionamento (top-navigation)
-    wrapper.innerHTML = `
-        <div class="video-container-wrapper">
-            <div class="player-shield"></div>
-            <iframe 
-                src="${embedUrl}" 
-                frameborder="0" 
-                allowfullscreen 
-                sandbox="allow-scripts allow-same-origin allow-presentation allow-forms">
-            </iframe>
-        </div>
-    `;
+    wrapper.innerHTML = `<iframe src="${embedUrl}" frameborder="0" allowfullscreen></iframe>`;
     modal.classList.remove('hidden');
 }
-
 
 function closePlayer() {
     document.getElementById('player-modal').classList.add('hidden');
@@ -160,24 +148,3 @@ document.getElementById('search-input').addEventListener('keypress', function (e
         renderVideos(filtered);
     }
 });
-// Exemplo de como você deve renderizar o iframe no seu script de catálogo
-function renderizarVideo(urlVideo) {
-    const container = document.getElementById('player-container');
-    
-    const iframe = document.createElement('iframe');
-    iframe.src = urlVideo;
-    iframe.width = "100%";
-    iframe.height = "100%";
-    iframe.allowFullscreen = true;
-    
-    // O SEGREDO ESTÁ AQUI:
-    // Permitimos scripts e o player funcionar, mas NÃO incluímos 'allow-top-navigation'
-    // Isso impede que o iframe mude a URL da sua página (a página "top")
-    iframe.setAttribute('sandbox', 'allow-scripts ' + 
-                                    'allow-same-origin ' + 
-                                    'allow-presentation ' + 
-                                    'allow-forms');
-
-    container.innerHTML = ''; // Limpa o player anterior
-    container.appendChild(iframe);
-}
