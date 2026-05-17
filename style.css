@@ -298,3 +298,14 @@ main { padding: 20px 4%; }
     height: 100%;
     border: none;
 }
+/* Se o seu vídeo estiver dentro de um link, isso faz com que */
+/* os cliques no vídeo ignorem o link externo */
+.container-do-video video, 
+.container-do-video iframe {
+    pointer-events: auto; /* Mantém os controles do player clicáveis */
+}
+
+/* Garante que o link em volta não intercepte o player */
+a.link-do-card {
+    /* se o player estiver aqui dentro, certifique-se de que o link só cubra a foto, não o player aberto */
+}
