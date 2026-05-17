@@ -148,3 +148,24 @@ document.getElementById('search-input').addEventListener('keypress', function (e
         renderVideos(filtered);
     }
 });
+// Exemplo de como você deve renderizar o iframe no seu script de catálogo
+function renderizarVideo(urlVideo) {
+    const container = document.getElementById('player-container');
+    
+    const iframe = document.createElement('iframe');
+    iframe.src = urlVideo;
+    iframe.width = "100%";
+    iframe.height = "100%";
+    iframe.allowFullscreen = true;
+    
+    // O SEGREDO ESTÁ AQUI:
+    // Permitimos scripts e o player funcionar, mas NÃO incluímos 'allow-top-navigation'
+    // Isso impede que o iframe mude a URL da sua página (a página "top")
+    iframe.setAttribute('sandbox', 'allow-scripts ' + 
+                                    'allow-same-origin ' + 
+                                    'allow-presentation ' + 
+                                    'allow-forms');
+
+    container.innerHTML = ''; // Limpa o player anterior
+    container.appendChild(iframe);
+}
