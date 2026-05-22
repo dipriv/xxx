@@ -1,5 +1,5 @@
 // CONFIGURAÇÕES DO BANCO DE DADOS (FIREBASE REALTIME DATABASE)
-const FIREBASE_URL = "https://console.firebase.google.com/project/_/database/.json"; 
+const FIREBASE_URL = "https://dipriv-47697-default-rtdb.firebaseio.com/.json"; 
 const YT_API_KEY = "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk"; 
 
 const CREDENTIALS = { user: "dipriv", pass: "arcnet2154" };
