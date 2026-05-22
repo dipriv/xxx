@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hot Prive</title>
-     <link rel="icon" type="image/x-icon" href="fav.ico">
+    <link rel="icon" type="image/x-icon" href="fav.ico">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -153,7 +153,14 @@
             </div>
 
             <div id="delete-tab" class="admin-tab-content hidden">
-                <h3 class="section-admin-title"><i class="fa-solid fa-folder-open"></i> Editar / Excluir Estruturas</h3>
+                
+                <h3 class="section-admin-title"><i class="fa-solid fa-file-import"></i> Importar Dados (JSON / Texto)</h3>
+                <div class="import-panel-box">
+                    <textarea id="import-text-area" placeholder="Cole aqui o código JSON exportado de um vídeo, subcategoria ou categoria inteira..."></textarea>
+                    <button id="btn-execute-import" class="btn-login" style="background:#00ffcc; color:#000; padding:8px; font-size:12px; margin-top:5px;"><i class="fa-solid fa-file-circle-plus"></i> Injetar e Sincronizar Dados</button>
+                </div>
+                
+                <h3 class="section-admin-title"><i class="fa-solid fa-folder-open"></i> Editar / Excluir / Exportar Estruturas</h3>
                 <div class="delete-list-container" style="margin-bottom: 25px;">
                     <table class="delete-table">
                         <thead>
