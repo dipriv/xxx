@@ -1,6 +1,6 @@
 // CONFIGURAÇÕES DO BANCO DE DADOS (FIREBASE REALTIME DATABASE)
 const FIREBASE_URL = "LINK_FIREBASE_JSON"; 
-const YT_API_KEY = "API_KEY"; 
+const YT_API_KEY = "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk"; 
 
 const CREDENTIALS = { user: "Dipriv", pass: "arcnet2154" };
 const SESSION_TIMEOUT = 30 * 60 * 1000; 
