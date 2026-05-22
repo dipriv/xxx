@@ -1,61 +1,204 @@
-﻿<!DOCTYPE html>
-<html lang="pt-br">
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flix Prive XXX</title>
-    <link rel="icon" type="image/x-icon" href="fav.ico">
+    <title>Videoteca</title>
+     <link rel="icon" type="image/x-icon" href="fav.ico">
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-    <!-- Tela de Login -->
-    <div id="login-screen" class="overlay">
+    <div id="login-screen" class="login-container">
         <div class="login-box">
-            <img src="hot.png" alt="Logo" width="150">
-            <h2>Acesso Restrito</h2>
-            <input type="text" id="username" placeholder="Usuário">
-            <input type="password" id="password" placeholder="Senha">
-            <button onclick="checkLogin()">Entrar</button>
-            <p id="login-error" class="error"></p>
+            <h2><i class="fa-solid fa-bolt"></i> Videoteca 📼 </h2>
+            <form id="login-form">
+                <div class="input-group">
+                    <label>Usuário</label>
+                    <input type="text" id="username" required autocomplete="username">
+                </div>
+                <div class="input-group">
+                    <label>Senha</label>
+                    <input type="password" id="password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-login">Entrar</button>
+                <div id="login-error" class="error-message">Acesso restrito</div>
+            </form>
         </div>
     </div>
 
-    <!-- Conteúdo Principal -->
-    <div id="main-content" class="hidden">
-        <header>
-    <div class="header-content">
-        <!-- Parte 1: Logo -->
-        <div class="logo-area">
-            <span class="logo-text">Flix Prive XXX</span>
-        </div>
+    <div id="main-content" class="main-wrapper hidden">
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-toggle" id="toggle-menu">
+                <i class="fa-solid fa-bars"></i>
+            </div>
+            <div class="sidebar-content">
+                <div class="sidebar-header">
+                    <h3>Conteúdo</h3>
+                </div>
+                <nav id="sidebar-menu" class="menu-channels"></nav>
+                <button id="btn-logout" class="btn-logout"><i class="fa-solid fa-power-off"></i> <span>Sair</span></button>
+            </div>
+        </aside>
 
-        <!-- Parte 2: Pesquisa (Centro) -->
-        <div class="search-bar">
-            <input type="text" id="search-input" placeholder="Buscar...">
-            <button id="search-btn">🔍</button>
-        </div>
+        <main class="content-area">
+            <div class="top-search-bar">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="search-input" placeholder="Pesquisar vídeos...">
+                </div>
+                <button id="btn-admin" class="btn-admin-gear" title="Painel de Controle"><i class="fa-solid fa-gear"></i></button>
+            </div>
 
-        <!-- Parte 3: Logout (Direita) -->
-        <div class="user-menu">
-            <button class="logout-btn" onclick="logout()">Sair</button>
-        </div>
-    </div>
-</header>
-
-
-
-        <main>
-            <section id="categories-container"></section>
+            <header class="main-header">
+                <h1 id="current-view-title">Início</h1>
+            </header>
+            
+            <section id="categories-grid" class="main-mosaic-grid"></section>
         </main>
+    </div>
 
-        <!-- Player Modal -->
-        <div id="player-modal" class="overlay hidden">
-            <div class="modal-content">
-                <button class="close-modal" onclick="closePlayer()">×</button>
-                <div id="video-wrapper"></div>
-                <h2 id="modal-title"></h2>
+    <div id="admin-modal" class="video-modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content admin-modal-box">
+            <button id="close-admin" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            <h2>Painel do Administrador</h2>
+            
+            <div class="admin-tabs">
+                <button class="tab-btn active" id="tab-link-yt" onclick="switchAdminTab('yt-tab')"><i class="fa-brands fa-youtube"></i> Importar Playlist</button>
+                <button class="tab-btn" id="tab-link-manual" onclick="switchAdminTab('manual-tab')"><i class="fa-solid fa-pen-to-square"></i> Cadastro Manual</button>
+                <button class="tab-btn" id="tab-link-delete" onclick="switchAdminTab('delete-tab')"><i class="fa-solid fa-folder-tree"></i> Gerenciar Listas e Vídeos</button>
+                <button class="tab-btn hidden" id="tab-link-edit" onclick="switchAdminTab('edit-video-tab')"><i class="fa-solid fa-user-gear"></i> Editando Vídeo</button>
+            </div>
+
+            <div id="yt-tab" class="admin-tab-content">
+                <form id="yt-import-form">
+                    <div class="input-group">
+                        <label>ID ou Link da Playlist do YouTube</label>
+                        <input type="text" id="yt-playlist-id" placeholder="Ex: PLt......" required>
+                    </div>
+                    <div class="input-row-flex">
+                        <div class="input-group">
+                            <label>Categoria</label>
+                            <input type="text" id="yt-cat" placeholder="Ex: Filmes" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Subcategoria</label>
+                            <input type="text" id="yt-sub" placeholder="Ex: Terror" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-login"><i class="fa-solid fa-cloud-arrow-down"></i> Sincronizar Playlist</button>
+                </form>
+            </div>
+
+            <div id="manual-tab" class="admin-tab-content hidden">
+                <form id="manual-upload-form">
+                    <div class="input-group">
+                        <label>Título do Vídeo</label>
+                        <input type="text" id="m-title" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Link do Vídeo / Embed (YouTube, Archive.org, MP4)</label>
+                        <input type="text" id="m-link" placeholder="https://..." required>
+                    </div>
+                    <div class="input-group">
+                        <label>Link da Imagem de Capa (Thumbnail)</label>
+                        <input type="text" id="m-capa" placeholder="https://..." required>
+                    </div>
+                    <div class="input-row-flex">
+                        <div class="input-group">
+                            <label>Categoria</label>
+                            <input type="text" id="m-cat" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Subcategoria</label>
+                            <input type="text" id="m-sub" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-login"><i class="fa-solid fa-plus"></i> Salvar Vídeo</button>
+                </form>
+            </div>
+
+            <div id="edit-video-tab" class="admin-tab-content hidden">
+                <form id="edit-video-form">
+                    <input type="hidden" id="edit-video-index">
+                    <div class="input-group">
+                        <label>Editar Título do Vídeo</label>
+                        <input type="text" id="edit-m-title" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Editar URL / Link Embed</label>
+                        <input type="text" id="edit-m-link" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Editar URL da Thumbnail</label>
+                        <input type="text" id="edit-m-capa" required>
+                    </div>
+                    <div class="input-row-flex">
+                        <div class="input-group">
+                            <label>Mudar Categoria</label>
+                            <input type="text" id="edit-m-cat" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Mudar Subcategoria</label>
+                            <input type="text" id="edit-m-sub" required>
+                        </div>
+                    </div>
+                    <div class="input-row-flex">
+                        <button type="submit" class="btn-login" style="background:#00ffcc; color:#000;"><i class="fa-solid fa-floppy-disk"></i> Confirmar Alterações</button>
+                        <button type="button" class="btn-login" style="background:#333;" onclick="cancelVideoEdit()"><i class="fa-solid fa-ban"></i> Cancelar</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="delete-tab" class="admin-tab-content hidden">
+                <h3 class="section-admin-title"><i class="fa-solid fa-folder-open"></i> Editar / Excluir Estruturas</h3>
+                <div class="delete-list-container" style="margin-bottom: 25px;">
+                    <table class="delete-table">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Nome Atual</th>
+                                <th>Pertence à Categoria</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-structure-list"></tbody>
+                    </table>
+                </div>
+
+                <h3 class="section-admin-title"><i class="fa-solid fa-film"></i> Vídeos Individuais</h3>
+                <div class="delete-list-container">
+                    <table class="delete-table">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Categoria</th>
+                                <th>Subcategoria</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-delete-list"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="admin-status" class="admin-status-log"></div>
+        </div>
+    </div>
+
+    <div id="video-modal" class="video-modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <button id="close-modal" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            <div id="player-wrapper" class="player-container"></div>
+            <div class="player-controls-bar">
+                <h3 id="modal-video-title">Título</h3>
+                <div class="controls-buttons">
+                    <button id="prev-video-btn" class="control-btn"><i class="fa-solid fa-backward"></i></button>
+                    <button id="next-video-btn" class="control-btn"><i class="fa-solid fa-forward"></i></button>
+                </div>
             </div>
         </div>
     </div>
