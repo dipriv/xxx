@@ -2,7 +2,7 @@
 const FIREBASE_URL = "https://dipriv-47697-default-rtdb.firebaseio.com/.json"; 
 const YT_API_KEY = "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk"; 
 
-const CREDENTIALS = { user: "diegosilvaeo", pass: "arcnet2154" };
+const CREDENTIALS = { user: "dipriv", pass: "arcnet2154" };
 const SESSION_TIMEOUT = 30 * 60 * 1000; 
 
 let allVideos = [];
