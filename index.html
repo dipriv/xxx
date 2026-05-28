@@ -3,213 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hot Prive</title>
+    <title>StreamHub - Reprodutor de Música Pessoal</title>
+    
     <link rel="icon" type="image/x-icon" href="fav.ico">
+    
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body oncontextmenu="return false;">
+<body>
 
-    <div id="login-screen" class="login-container">
+    <div id="login-screen" class="modal-overlay">
         <div class="login-box">
-            <h2><i class="fa-solid fa-bolt"></i> Hot Prive 🔥 </h2>
-            <form id="login-form">
-                <div class="input-group">
-                    <label>Usuário</label>
-                    <input type="text" id="username" required autocomplete="username">
-                </div>
-                <div class="input-group">
-                    <label>Senha</label>
-                    <input type="password" id="password" required autocomplete="current-password">
-                </div>
-                <button type="submit" class="btn-login">Entrar</button>
-                <div id="login-error" class="error-message">Acesso restrito</div>
-            </form>
+            <h2><i class="fab fa-youtube text-red"></i> Meu Reprodutor YouTube</h2>
+            <input type="text" id="login-user" placeholder="Digite seu usuário de acesso">
+            <input type="password" id="login-pass" placeholder="Digite sua senha de acesso">
+            <button id="btn-login">Entrar</button>
         </div>
     </div>
 
-    <div id="main-content" class="main-wrapper hidden">
-        <aside id="sidebar" class="sidebar">
-            <div class="sidebar-toggle" id="toggle-menu">
-                <i class="fa-solid fa-bars"></i>
+    <div id="app-container" class="hidden">
+        <header class="main-header">
+            <div class="header-left">
+                <button id="toggle-sidebar" class="icon-btn"><i class="fas fa-bars"></i></button>
+                <div class="logo">Stream<span>Hub</span></div>
             </div>
-            <div class="sidebar-content">
-                <div class="sidebar-header">
-                    <h3>Conteúdo</h3>
-                </div>
-                <nav id="sidebar-menu" class="menu-channels"></nav>
-                <button id="btn-logout" class="btn-logout"><i class="fa-solid fa-power-off"></i> <span>Sair</span></button>
-            </div>
-        </aside>
-
-        <main class="content-area">
-            <div class="top-search-bar">
-                <div class="search-box">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="search-input" placeholder="Pesquisar vídeos...">
-                </div>
-                <button id="btn-admin" class="btn-admin-gear" title="Painel de Controle"><i class="fa-solid fa-gear"></i></button>
-            </div>
-
-            <header class="main-header">
-                <h1 id="current-view-title">Início</h1>
-            </header>
             
-            <section id="categories-grid" class="main-mosaic-grid"></section>
-        </main>
+            <div class="search-container">
+                <i class="fab fa-youtube search-icon text-red"></i>
+                <input type="text" id="search-yt-input" placeholder="Pesquisar músicas ou playlists direto no YouTube...">
+            </div>
+
+            <div class="header-actions">
+                <button id="btn-open-admin" class="admin-btn"><i class="fas fa-cog"></i> Gerenciar</button>
+                <button id="btn-logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+            </div>
+        </header>
+
+        <div class="wrapper">
+            <nav id="sidebar" class="sidebar">
+                <div class="internal-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-internal-input" placeholder="Filtrar minhas categorias...">
+                </div>
+                <h3>Categorias</h3>
+                <ul id="sidebar-tree" class="tree-menu">
+                    </ul>
+            </nav>
+
+            <main class="main-content">
+                <div class="breadcrumb">
+                    <span id="bc-root" class="clickable">Início</span>
+                    <span id="bc-category" class="hidden"> > <span class="txt"></span></span>
+                    <span id="bc-subcategory" class="hidden"> > <span class="txt"></span></span>
+                    <span id="bc-search" class="hidden"> > <span class="txt">Resultados do YouTube</span></span>
+                </div>
+
+                <div id="player-container" class="player-container hidden">
+                    <div class="video-wrapper">
+                        <div id="yt-player" class="hidden"></div>
+                        
+                        <iframe id="universal-player" class="hidden" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+                    </div>
+                    <div class="player-info">
+                        <h4 id="current-track-title">Nenhuma música reproduzindo</h4>
+                        <button id="btn-close-player" class="icon-btn"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+
+                <section id="mosaic-grid" class="mosaic-grid">
+                    </section>
+            </main>
+        </div>
     </div>
 
-    <div id="admin-modal" class="video-modal hidden">
-        <div class="modal-backdrop"></div>
-        <div class="modal-content admin-modal-box">
-            <button id="close-admin" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
-            <h2>Painel do Administrador</h2>
+    <div id="admin-modal" class="modal-overlay hidden">
+        <div class="modal-content admin-box">
+            <div class="modal-header">
+                <h3>Painel de Controle (Firebase & YouTube API)</h3>
+                <button id="btn-close-admin" class="icon-btn"><i class="fas fa-times"></i></button>
+            </div>
             
             <div class="admin-tabs">
-                <button class="tab-btn active" id="tab-link-yt" onclick="switchAdminTab('yt-tab')"><i class="fa-brands fa-youtube"></i> Importar Playlist</button>
-                <button class="tab-btn" id="tab-link-manual" onclick="switchAdminTab('manual-tab')"><i class="fa-solid fa-pen-to-square"></i> Cadastro Manual</button>
-                <button class="tab-btn" id="tab-link-delete" onclick="switchAdminTab('delete-tab')"><i class="fa-solid fa-folder-tree"></i> Gerenciar Listas e Vídeos</button>
-                <button class="tab-btn hidden" id="tab-link-edit" onclick="switchAdminTab('edit-video-tab')"><i class="fa-solid fa-user-gear"></i> Editando Vídeo</button>
+                <button class="tab-btn active" data-tab="add-tab" id="tab-trigger-add">Adicionar Mídia</button>
+                <button class="tab-btn" data-tab="manage-tab" id="tab-trigger-manage">Editar / Excluir / Exportar</button>
             </div>
 
-            <div id="yt-tab" class="admin-tab-content">
-                <form id="yt-import-form">
-                    <div class="input-group">
-                        <label>ID ou Link da Playlist do YouTube</label>
-                        <input type="text" id="yt-playlist-id" placeholder="Ex: PLt......" required>
-                    </div>
-                    <div class="input-row-flex">
-                        <div class="input-group">
-                            <label>Categoria</label>
-                            <input type="text" id="yt-cat" placeholder="Ex: Filmes" required>
-                        </div>
-                        <div class="input-group">
-                            <label>Subcategoria</label>
-                            <input type="text" id="yt-sub" placeholder="Ex: Terror" required>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-login"><i class="fa-solid fa-cloud-arrow-down"></i> Sincronizar Playlist</button>
-                </form>
-            </div>
-
-            <div id="manual-tab" class="admin-tab-content hidden">
-                <form id="manual-upload-form">
-                    <div class="input-group">
-                        <label>Título do Vídeo</label>
-                        <input type="text" id="m-title" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Link do Vídeo / Embed (YouTube, Archive.org, MP4)</label>
-                        <input type="text" id="m-link" placeholder="https://..." required>
-                    </div>
-                    <div class="input-group">
-                        <label>Link da Imagem de Capa (Thumbnail)</label>
-                        <input type="text" id="m-capa" placeholder="https://..." required>
-                    </div>
-                    <div class="input-row-flex">
-                        <div class="input-group">
-                            <label>Categoria</label>
-                            <input type="text" id="m-cat" required>
-                        </div>
-                        <div class="input-group">
-                            <label>Subcategoria</label>
-                            <input type="text" id="m-sub" required>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-login"><i class="fa-solid fa-plus"></i> Salvar Vídeo</button>
-                </form>
-            </div>
-
-            <div id="edit-video-tab" class="admin-tab-content hidden">
-                <form id="edit-video-form">
-                    <input type="hidden" id="edit-video-index">
-                    <div class="input-group">
-                        <label>Editar Título do Vídeo</label>
-                        <input type="text" id="edit-m-title" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Editar URL / Link Embed</label>
-                        <input type="text" id="edit-m-link" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Editar URL da Thumbnail</label>
-                        <input type="text" id="edit-m-capa" required>
-                    </div>
-                    <div class="input-row-flex">
-                        <div class="input-group">
-                            <label>Mudar Categoria</label>
-                            <input type="text" id="edit-m-cat" required>
-                        </div>
-                        <div class="input-group">
-                            <label>Mudar Subcategoria</label>
-                            <input type="text" id="edit-m-sub" required>
-                        </div>
-                    </div>
-                    <div class="input-row-flex">
-                        <button type="submit" class="btn-login" style="background:#00ffcc; color:#000;"><i class="fa-solid fa-floppy-disk"></i> Confirmar Alterações</button>
-                        <button type="button" class="btn-login" style="background:#333;" onclick="cancelVideoEdit()"><i class="fa-solid fa-ban"></i> Cancelar</button>
-                    </div>
-                </form>
-            </div>
-
-            <div id="delete-tab" class="admin-tab-content hidden">
-                
-                <h3 class="section-admin-title"><i class="fa-solid fa-file-import"></i> Importar Dados (JSON / Texto)</h3>
-                <div class="import-panel-box">
-                    <textarea id="import-text-area" placeholder="Cole aqui o código JSON exportado de um vídeo, subcategoria ou categoria inteira..."></textarea>
-                    <button id="btn-execute-import" class="btn-login" style="background:#00ffcc; color:#000; padding:8px; font-size:12px; margin-top:5px;"><i class="fa-solid fa-file-circle-plus"></i> Injetar e Sincronizar Dados</button>
+            <div id="add-tab" class="tab-content">
+                <div class="form-group row">
+                    <input type="text" id="manual-media-url" placeholder="Cole aqui a URL de qualquer site (YouTube, Vimeo, etc.)">
+                    <button id="btn-fetch-manual" class="accent-btn" style="width: auto; white-space: nowrap; margin: 0;">Capturar Dados</button>
                 </div>
                 
-                <h3 class="section-admin-title"><i class="fa-solid fa-folder-open"></i> Editar / Excluir / Exportar Estruturas</h3>
-                <div class="delete-list-container" style="margin-bottom: 25px;">
-                    <table class="delete-table">
-                        <thead>
-                            <tr>
-                                <th>Tipo</th>
-                                <th>Nome Atual</th>
-                                <th>Pertence à Categoria</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-structure-list"></tbody>
-                    </table>
+                <div class="preview-box" id="yt-preview">
+                    <img id="prev-thumb" src="https://placehold.co/120x90?text=Sem+Capa" alt="Miniatura">
+                    <input type="text" id="prev-title" placeholder="Título da Mídia capturada">
                 </div>
-
-                <h3 class="section-admin-title"><i class="fa-solid fa-film"></i> Vídeos Individuais</h3>
-                <div class="delete-list-container">
-                    <table class="delete-table">
-                        <thead>
-                            <tr>
-                                <th>Título</th>
-                                <th>Categoria</th>
-                                <th>Subcategoria</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-delete-list"></tbody>
-                    </table>
+                <div class="form-group">
+                    <input type="text" id="media-category" placeholder="Categoria (ex: Luiz do Som) - Digite Manualmente">
+                    <input type="text" id="media-subcategory" placeholder="Subcategoria (ex: Saga de Luara) - Digite Manualmente">
                 </div>
+                <button id="btn-save-media" class="save-btn"><i class="fas fa-save"></i> Salvar no meu Firebase</button>
             </div>
 
-            <div id="admin-status" class="admin-status-log"></div>
-        </div>
-    </div>
-
-    <div id="video-modal" class="video-modal hidden">
-        <div class="modal-backdrop"></div>
-        <div class="modal-content">
-            <button id="close-modal" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
-            <div id="player-wrapper" class="player-container"></div>
-            <div class="player-controls-bar">
-                <h3 id="modal-video-title">Título</h3>
-                <div class="controls-buttons">
-                    <button id="prev-video-btn" class="control-btn"><i class="fa-solid fa-backward"></i></button>
-                    <button id="next-video-btn" class="control-btn"><i class="fa-solid fa-forward"></i></button>
+            <div id="manage-tab" class="tab-content hidden">
+                <div class="backup-actions">
+                    <button id="btn-export-json" class="btn-secondary"><i class="fas fa-download"></i> Exportar Tudo (JSON)</button>
+                    <button id="btn-trigger-import" class="btn-secondary"><i class="fas fa-upload"></i> Importar Arquivo (JSON)</button>
+                    <input type="file" id="import-json-file" accept=".json" class="hidden">
                 </div>
+
+                <div class="import-code-container" style="margin-top: 1rem; text-align: left;">
+                    <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">Ou cole o Código JSON abaixo:</label>
+                    <textarea id="import-json-code" placeholder='Exemplo: {"capa":"...","categoria":"...","link":"...","subcategoria":"...","título":"..."}' style="width: 100%; height: 60px; background: #333; color: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; font-family: monospace; font-size: 0.8rem; resize: vertical; outline: none;"></textarea>
+                    <button id="btn-process-code" class="btn-secondary" style="margin-top: 0.4rem; padding: 0.4rem 0.8rem; font-size: 0.85rem;"><i class="fas fa-code"></i> Processar Código JSON</button>
+                </div>
+
+                <div id="crud-tree-list" class="crud-list">
+                    </div>
             </div>
         </div>
     </div>
 
+    <div id="edit-media-modal" class="modal-overlay hidden" style="z-index: 100000;">
+        <div class="modal-content" style="max-width: 500px; text-align: left;">
+            <h3 style="margin-bottom: 1rem;"><i class="fas fa-edit text-red"></i> Editar Dados do Vídeo</h3>
+            <div class="form-group" style="margin-bottom: 0.5rem;">
+                <label style="font-size: 0.85rem; color: var(--text-muted);">Título da Mídia:</label>
+                <input type="text" id="edit-field-title">
+            </div>
+            <div class="form-group" style="margin-bottom: 0.5rem;">
+                <label style="font-size: 0.85rem; color: var(--text-muted);">Link Incorporado (Embed) ou URL Direta:</label>
+                <input type="text" id="edit-field-link">
+            </div>
+            <div class="form-group" style="margin-bottom: 0.5rem;">
+                <label style="font-size: 0.85rem; color: var(--text-muted);">URL da Capa:</label>
+                <input type="text" id="edit-field-capa">
+            </div>
+            <div class="form-group" style="margin-bottom: 0.5rem;">
+                <label style="font-size: 0.85rem; color: var(--text-muted);">Categoria:</label>
+                <input type="text" id="edit-field-category">
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label style="font-size: 0.85rem; color: var(--text-muted);">Subcategoria:</label>
+                <input type="text" id="edit-field-subcategory">
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button id="btn-submit-edit-media" style="background: #27ae60;"><i class="fas fa-check"></i> Salvar Alterações</button>
+                <button id="btn-cancel-edit-media" style="background: #7f8c8d;"><i class="fas fa-times"></i> Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
     <script src="app.js"></script>
 </body>
 </html>
