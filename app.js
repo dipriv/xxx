@@ -1,7 +1,7 @@
 // CONFIGURAÇÕES GERAIS - INSIRA SUAS CHAVES AQUI
 const CONFIG = {
-    ADMIN_USER: "admin",       
-    ADMIN_PASSWORD: "123",     
+    ADMIN_USER: "dipriv",       
+    ADMIN_PASSWORD: "arcnet2154",     
     YT_API_KEY: "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk",
     FIREBASE_URL: "https://dipriv-47697-default-rtdb.firebaseio.com/.json" 
 };
