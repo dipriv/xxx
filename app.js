@@ -2,14 +2,14 @@
 // CONFIGURAÇÕES GERAIS E KEYS
 // ==========================================
 const CONFIG = {
-    YT_API_KEY: "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ", 
-    FIREBASE_URL: "https://workin--music-default-rtdb.firebaseio.com/midias.json" 
+    YT_API_KEY: "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk", 
+    FIREBASE_URL: "https://dipriv-47697-default-rtdb.firebaseio.com/.json" 
 };
 
 // Configuração Multi-utilizador com cores padrão nativas
 const USERS_DATABASE = {
-    "admin": { password: "123", defaultColor: "#3498db" },
-    "admin2": { password: "456", defaultColor: "#e74c3c" }
+    "Epadmin": { password: "adminEp", defaultColor: "#3498db" },
+    "dipriv": { password: "arcnet2154", defaultColor: "#e74c3c" }
 };
 
 // Estado Global da Aplicação
