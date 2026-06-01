@@ -4,7 +4,7 @@
 const USERS_DATABASE = {
     "diegosilvaeo": { 
         password: "arcnet2154", 
-        defaultColor: "#1bffc1",
+        defaultColor: "#23ffb4",
         firebaseUrl: "https://workin--music-default-rtdb.firebaseio.com/midias.json",
         ytApiKey: "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ"
     },
@@ -36,6 +36,7 @@ let lastYtSearchResults = [];
 let activeEditingIndex = null;
 let canalSelecionadoProvisorio = null;
 
+// Estados de Expansão Preservados para Tempo Real
 let expandedCrudCats = {};
 let expandedCrudSubs = {};
 
@@ -84,7 +85,7 @@ function carregarTemaDoUsuarioLogado(usuario) {
 }
 
 // ==========================================
-// 1. AUTENTICAÇÃO COM SESSÃO E EVENTOS DE LOGIN (FIXED)
+// 1. AUTENTICAÇÃO COM SESSÃO E EVENTOS DE LOGIN
 // ==========================================
 function checkSession() {
     const loginData = localStorage.getItem('streamhub_session');
@@ -109,7 +110,6 @@ function configurarEventosLogin() {
     const inputPass = document.getElementById('login-pass');
     const btnLogin = document.getElementById('btn-login');
 
-    // Remove qualquer vinculação duplicada anterior limpando referências nativas diretas
     if (inputUser) {
         inputUser.onkeydown = null;
         inputUser.onkeydown = (e) => {
@@ -206,7 +206,6 @@ function alimentarSeletorCategoriasCanais() {
     if(categories.length === 0) { select.innerHTML = `<option value="">Nenhuma categoria encontrada.</option>`; return; }
     categories.forEach(cat => { const opt = document.createElement("option"); opt.value = cat; opt.innerText = cat; select.appendChild(opt); });
 }
-
 // ==========================================
 // 3. RENDERIZAÇÃO DO MOSAICO
 // ==========================================
@@ -286,7 +285,7 @@ function createCard(title, imgSrc, showAddButton = false, isPlaylist = false, cl
 }
 
 // ==========================================
-// 4. API DE CANAIS DINÂMICOS
+// 4. API DE CANAIS DINÂMICOS - ORDEM CRONOLÓGICA INVERTIDA
 // ==========================================
 async function buscarVideosRecentesDoCanal(playlistId) {
     const grid = document.getElementById('mosaic-grid'); if (grid) grid.innerHTML = '<h3>Atualizando vídeos recentes do canal via API...</h3>';
@@ -294,12 +293,16 @@ async function buscarVideosRecentesDoCanal(playlistId) {
     try {
         const res = await fetch(url); const data = await res.json();
         if(data.items) {
-            currentPlaylist = data.items.map(item => ({
+            const itensInvertidos = data.items.reverse();
+            currentPlaylist = itensInvertidos.map(item => ({
                 título: item.snippet.title, link: `https://www.youtube.com/embed/${item.snippet.resourceId.videoId}`,
                 capa: item.snippet.thumbnails.medium ? item.snippet.thumbnails.medium.url : item.snippet.thumbnails.default.url,
                 categoria: selectedCategory, subcategoria: "Vídeos Recentes", isDinâmico: true
             }));
-            if (grid) { grid.innerHTML = ''; currentPlaylist.forEach((track, index) => { grid.appendChild(createCard(track.título, track.capa, false, false, () => { playTrack(index); }, -1)); }); }
+            if (grid) { 
+                grid.innerHTML = ''; 
+                currentPlaylist.forEach((track, index) => { grid.appendChild(createCard(track.título, track.capa, false, false, () => { playTrack(index); }, -1)); }); 
+            }
         }
     } catch (e) { if (grid) grid.innerHTML = '<h3>Erro ao carregar feeds do canal.</h3>'; }
 }
@@ -412,7 +415,7 @@ function playTrack(index) {
 
     const ytPlayerEl = document.getElementById('yt-player'); const univPlayerEl = document.getElementById('universal-player'); const rawPlayerEl = document.getElementById('raw-player');
     if (univPlayerEl) univPlayerEl.src = ""; if (rawPlayerEl) rawPlayerEl.src = "";
-    if (univPlayerEl) univPlayerEl.classList.add('hidden'); if (rawPlayerEl) rawPlayerEl.classList.add('hidden'); if (ytPlayerEl) ytPlayerEl.classList.add('hidden');
+    if (univPlayerEl) univPlayerEl.classList.add('hidden'); if (rawPlayerEl) rawPlayerEl.classList.add('hidden'); if (ytPlayerEl) ytPlayerEl.classList.remove('hidden');
     if (rawPlayerEl) rawPlayerEl.pause(); const linkOriginal = track.link.trim(); const vId = extractYoutubeId(linkOriginal);
 
     if(vId) {
@@ -432,7 +435,7 @@ function extractYoutubeId(url) {
 }
 
 // ==========================================
-// 7. ÁRVORE GERENCIAL SANFONA (CRUD COMPLETO)
+// 7. ÁRVORE GERENCIAL SANFONA (CRUD COMPLETO REAL-TIME FIX)
 // ==========================================
 function renderCrudManager() {
     const listContainer = document.getElementById('crud-tree-list'); if (!listContainer) return; listContainer.innerHTML = '';
@@ -443,7 +446,12 @@ function renderCrudManager() {
         if(!cat) return;
         const catRow = createCrudRow(cat, 'categoria', () => { let n = prompt("Novo nome para a Categoria:", cat); if(n && n.trim() !== "") renomearCategoriaCompleta(cat, n.trim()); }, () => { if(confirm(`Excluir ${cat}?`)) deletarCategoriaCompleta(cat); }, () => downloadJSON(database.filter(item => item.categoria === cat), `cat_${cat}`));
         const subContainer = document.createElement('div'); subContainer.style.display = expandedCrudCats[cat] ? 'block' : 'none';
-        catRow.addEventListener('click', (e) => { if(e.target.closest('.crud-actions')) return; expandedCrudCats[cat] = !expandedCrudCats[cat]; subContainer.style.display = expandedCrudCats[cat] ? 'block' : 'none'; });
+        
+        catRow.addEventListener('click', (e) => { 
+            if(e.target.closest('.crud-actions')) return; 
+            expandedCrudCats[cat] = !expandedCrudCats[cat]; 
+            subContainer.style.display = expandedCrudCats[cat] ? 'block' : 'none'; 
+        });
         listContainer.appendChild(catRow);
 
         const subcategories = [...new Set(database.filter(item => item.categoria === cat).map(item => item.subcategoria))];
@@ -452,7 +460,12 @@ function renderCrudManager() {
         subcategories.sort().forEach(sub => {
             const subRow = createCrudRow(sub, 'subcategoria', sub === "Vídeos Recentes" ? null : () => { let n = prompt("Novo nome para a Subcategoria:", sub); if(n && n.trim() !== "") renomearSubcategoriaCompleta(cat, sub, n.trim()); }, () => { if(confirm(`Excluir a subcategoria ${sub}?`)) deletarSubcategoria(cat, sub); }, () => downloadJSON(database.filter(item => item.categoria === cat && item.subcategoria === sub), `sub_${sub}`));
             const mediaContainer = document.createElement('div'); mediaContainer.style.display = expandedCrudSubs[cat + '_' + sub] ? 'block' : 'none';
-            subRow.addEventListener('click', (e) => { if(e.target.closest('.crud-actions')) return; expandedCrudSubs[cat + '_' + sub] = !expandedCrudSubs[cat + '_' + sub]; mediaContainer.style.display = expandedCrudSubs[cat + '_' + sub] ? 'block' : 'none'; });
+            
+            subRow.addEventListener('click', (e) => { 
+                if(e.target.closest('.crud-actions')) return; 
+                expandedCrudSubs[cat + '_' + sub] = !expandedCrudSubs[cat + '_' + sub]; 
+                mediaContainer.style.display = expandedCrudSubs[cat + '_' + sub] ? 'block' : 'none'; 
+            });
             subContainer.appendChild(subRow);
 
             if(sub === "Vídeos Recentes") {
@@ -479,7 +492,7 @@ function createCrudRow(title, type, onEdit, onDel, onExp) {
 }
 
 // ==========================================
-// 8. MOTOR DE PERSISTÊNCIA EM LOTE REVISADO (PUT)
+// 8. MOTOR DE PERSISTÊNCIA EM LOTE REVISADO & SINCRONIZAÇÃO EM TEMPO REAL ATIVADA
 // ==========================================
 function openAdvancedEditModal(index) {
     activeEditingIndex = index; const item = database[index];
@@ -501,10 +514,12 @@ async function saveAdvancedEditChanges(e) {
     
     try {
         await empurrarBancoIntegralParaServidor();
-        alert("Alteração salva com sucesso!");
         document.getElementById('edit-media-modal').classList.add('hidden');
+        
+        // Força atualização transparente no mosaico e na sanfona administrativa na mesma hora
         await recarregarDadosDoBanco(); 
         renderCrudManager();
+        alert("Alteração salva com sucesso!");
     } catch (err) { alert("Erro: " + err.message); }
 }
 
@@ -534,7 +549,10 @@ async function saveMediaToDatabase(e) {
             await empurrarBancoIntegralParaServidor();
             alert("Vídeo único salvo com sucesso!");
         }
-        document.getElementById('manual-media-url').value = ""; if (document.getElementById('admin-modal')) document.getElementById('admin-modal').classList.add('hidden');
+        document.getElementById('manual-media-url').value = ""; 
+        if (document.getElementById('admin-modal')) document.getElementById('admin-modal').classList.add('hidden');
+        
+        // Sincronização em tempo real na grade principal de mídias
         await recarregarDadosDoBanco();
     } catch (err) { alert("Erro: " + err.message); } finally { btnSave.innerText = "Salvar no meu Firebase"; btnSave.disabled = false; }
 }
@@ -548,15 +566,17 @@ async function processarInjecaoDeDadosAcumulativa(novosItens) {
             else Object.keys(data).forEach(k => { if(data[k]) bancoAtual.push(data[k]); });
         }
         novosItens.forEach(novo => {
+            // OPERADOR SPREAD REMOVIDO: Correção sintática definitiva contra quebras e congelamentos
             const limpo = { título: novo.título, link: novo.link, capa: novo.capa || "", categoria: novo.categoria, subcategoria: novo.subcategoria || "" };
             const jaExiste = bancoAtual.some(velho => velho.link === limpo.link && velho.categoria === limpo.categoria);
             if(!jaExiste) bancoAtual.push(limpo);
         });
         database = bancoAtual;
         await empurrarBancoIntegralParaServidor();
-        alert(`Importação concluída! O seu banco agora possui um total de ${database.length} mídias.`);
+        
         await recarregarDadosDoBanco(); 
         renderCrudManager();
+        alert(`Importação concluída! O seu banco agora possui un total de ${database.length} mídias.`);
     } catch(e) { alert("Falha na mesclagem de dados."); }
 }
 
@@ -580,7 +600,6 @@ async function deletarMidiaUnica(indexNoBanco) {
     try {
         database.splice(indexNoBanco, 1);
         await empurrarBancoIntegralParaServidor();
-        alert("Mídia removida com sucesso!");
         await recarregarDadosDoBanco(); 
         renderCrudManager();
     } catch(e) { alert("Erro ao excluir mídia."); }
@@ -590,7 +609,6 @@ async function deletarSubcategoria(cat, sub) {
     try {
         database = database.filter(item => !(item.categoria === cat && item.subcategoria === sub));
         await empurrarBancoIntegralParaServidor();
-        alert("Subcategoria removida!");
         await recarregarDadosDoBanco(); 
         renderCrudManager();
     } catch(e) { alert("Erro ao excluir subcategoria."); }
@@ -601,7 +619,7 @@ async function deletarCategoriaCompleta(cat) {
         database = database.filter(item => item.categoria !== cat);
         await empurrarBancoIntegralParaServidor();
         await fetch(obterUrlCanalIndividual(btoa(unescape(encodeURIComponent(cat))).replace(/=/g, "")), { method: 'DELETE' });
-        alert("Categoria removida por completo!");
+        
         currentView = 'categories'; selectedCategory = ''; selectedSubcategory = '';
         await recarregarDadosDoBanco(); 
         renderCrudManager();
@@ -617,7 +635,6 @@ async function renomearCategoriaCompleta(antiga, nova) {
             const newNodeName = btoa(unescape(encodeURIComponent(nova))).replace(/=/g, "");
             await fetch(obterUrlCanalIndividual(newNodeName), { method: "PUT", body: JSON.stringify(canaisDinamicos[oldNodeName]) }); await fetch(obterUrlCanalIndividual(oldNodeName), { method: "DELETE" });
         }
-        alert("Categoria renomeada!");
         await recarregarDadosDoBanco(); 
         renderCrudManager();
     } catch(e) { alert("Erro."); }
@@ -627,7 +644,6 @@ async function renomearSubcategoriaCompleta(cat, antigaSub, novaSub) {
     try {
         database.forEach(item => { if(item.categoria === cat && item.subcategoria === antigaSub) item.subcategoria = novaSub; });
         await empurrarBancoIntegralParaServidor();
-        alert("Subcategoria renomeada!");
         await recarregarDadosDoBanco(); 
         renderCrudManager();
     } catch(e) { alert("Erro."); }
@@ -647,8 +663,8 @@ function inicializarSeletorCoresLinear() {
         const rect = bar.getBoundingClientRect(); let clientX = e.clientX || (e.touches && e.touches[0].clientX); let x = clientX - rect.left;
         if (x < 0) x = 0; if (x > rect.width) x = rect.width; let percent = x / rect.width; selector.style.left = (percent * 100) + '%';
         let segment = percent * (coresGradiente.length - 1); let index = Math.floor(segment); let factor = segment - index;
-        let cor1 = coresGradiente[index]; let cor2 = coresGradiente[index + 1] || coresGradiente[index];
-        let rgb1 = hexToRgb(cor1); let rgb2 = hexToRgb(cor2);
+        let core1 = coresGradiente[index]; let cor2 = coresGradiente[index + 1] || coresGradiente[index];
+        let rgb1 = hexToRgb(core1); let rgb2 = hexToRgb(cor2);
         let r = Math.round(rgb1.r + factor * (rgb2.r - rgb1.r)); let g = Math.round(rgb1.g + factor * (rgb2.g - rgb1.g)); let b = Math.round(rgb1.b + factor * (rgb2.b - rgb1.b));
         let hexResult = rgbToHex(r, g, b); aplicarCorTema(hexResult); if(currentUser) localStorage.setItem(`streamhub_theme_${currentUser}`, hexResult);
     }
@@ -657,7 +673,7 @@ function inicializarSeletorCoresLinear() {
     bar.addEventListener('mousedown', (e) => { isDragging = true; calcularCorPelaPosicao(e); });
     document.addEventListener('mousemove', (e) => { if (isDragging) calcularCorPelaPosicao(e); }); document.addEventListener('mouseup', () => isDragging = false);
     bar.addEventListener('touchstart', (e) => { isDragging = true; calcularCorPelaPosicao(e); }, {passive: true});
-    document.addEventListener('touchmove', (e) => { if (isDragging) calcularCorPelaPosicao(e); }, {passive: true}); document.addEventListener('touchend', () => isDragging = false);
+    document.addEventListener('touchmove', (e) => { if (isDragging) calcularCorPeraPosicao(e); }, {passive: true}); document.addEventListener('touchend', () => isDragging = false);
 }
 
 function handleToggleSidebar() {
@@ -666,15 +682,15 @@ function handleToggleSidebar() {
     else { sidebar.classList.toggle('collapsed'); sidebar.classList.remove('open'); }
 }
 
+// ==========================================
+// 9. MAPA DE EVENTOS E LUPA MOBILE
+// ==========================================
 function switchTabs(targetTabId, activeTriggerBtnId) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
     const triggerBtn = document.getElementById(activeTriggerBtnId); const targetTab = document.getElementById(targetTabId);
     if (triggerBtn) triggerBtn.classList.add('active'); if (targetTab) targetTab.classList.remove('hidden');
 }
 
-// ==========================================
-// 9. MAPA DE EVENTOS E LUPA MOBILE
-// ==========================================
 function setupEventListeners() {
     if (document.getElementById('search-yt-input')) document.getElementById('search-yt-input').onkeypress = (e) => { if(e.key === 'Enter') searchYouTubeGlobal(e.target.value); };
     if (document.getElementById('search-yt-input-mobile')) { document.getElementById('search-yt-input-mobile').onkeypress = (e) => { if(e.key === 'Enter') searchYouTubeGlobal(e.target.value); }; }
@@ -714,6 +730,29 @@ function setupEventListeners() {
     if (document.getElementById('tab-trigger-channel')) document.getElementById('tab-trigger-channel').onclick = (e) => { e.preventDefault(); switchTabs('channel-tab', 'tab-trigger-channel'); };
     if (document.getElementById('btn-submit-edit-media')) document.getElementById('btn-submit-edit-media').onclick = (e) => saveAdvancedEditChanges(e);
     if (document.getElementById('btn-cancel-edit-media')) document.getElementById('btn-cancel-edit-media').onclick = (e) => { e.preventDefault(); if(document.getElementById('edit-media-modal')) document.getElementById('edit-media-modal').classList.add('hidden'); };
+    if (document.getElementById('btn-cancel-edit-media-2')) document.getElementById('btn-cancel-edit-media-2').onclick = (e) => { e.preventDefault(); if(document.getElementById('edit-media-modal')) document.getElementById('edit-media-modal').classList.add('hidden'); };
+
+    if (document.getElementById('btn-export-all-json')) {
+        document.getElementById('btn-export-all-json').onclick = (e) => {
+            e.preventDefault(); if (database.length === 0) return alert("Banco vazio!");
+            downloadJSON(database, "backup_completo_streamhub");
+        };
+    }
+
+    if (document.getElementById('btn-submit-json-code')) {
+        document.getElementById('btn-submit-json-code').onclick = (e) => { e.preventDefault(); importarCodigoJSON(); };
+    }
+
+    if (document.getElementById('btn-reset-theme')) {
+        document.getElementById('btn-reset-theme').onclick = (e) => {
+            e.preventDefault();
+            if(currentUser) {
+                localStorage.removeItem(`streamhub_theme_${currentUser}`);
+                let corOriginal = USERS_DATABASE[currentUser] ? USERS_DATABASE[currentUser].defaultColor : "#3498db";
+                aplicarCorTema(corOriginal); posicionarSetaPelaCor(corOriginal);
+            }
+        };
+    }
 
     const fileImport = document.getElementById('file-import-json');
     if (fileImport) {
@@ -744,5 +783,4 @@ function setupEventListeners() {
     configurarEventosBuscaCanal(); inicializarSeletorCoresLinear();
 }
 
-// Inicialização imediata com os listeners corrigidos
 configurarEventosLogin(); checkSession();
