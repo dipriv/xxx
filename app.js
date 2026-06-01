@@ -1,15 +1,26 @@
 // ==========================================
-// CONFIGURAÇÕES GERAIS E KEYS
+// BANCO DE DADOS E CONFIGURAÇÕES MULTI-UTILIZADOR
 // ==========================================
-const CONFIG = {
-    YT_API_KEY: "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk", 
-    FIREBASE_URL: "https://dipriv-47697-default-rtdb.firebaseio.com/.json" 
+// Cada usuário agora possui sua própria senha, cor nativa, link do Firebase e API Key do YouTube
+const USERS_DATABASE = {
+    "diegosilvaeo": { 
+        password: "arcnet2154", 
+        defaultColor: "#3498db",
+        firebaseUrl: "https://workin--music-default-rtdb.firebaseio.com/midias.json",
+        ytApiKey: "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ"
+    },
+    "admin2": { 
+        password: "456", 
+        defaultColor: "#e74c3c",
+        firebaseUrl: "https://dipriv-47697-default-rtdb.firebaseio.com/.json", // Link exclusivo do Admin2
+        ytApiKey: "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk" // API Key exclusiva do Admin2
+    }
 };
 
-// Configuração Multi-utilizador com cores padrão nativas
-const USERS_DATABASE = {
-    "Epadmin": { password: "adminEp", defaultColor: "#3498db" },
-    "dipriv": { password: "arcnet2154", defaultColor: "#e74c3c" }
+// Variáveis de Configuração Ativa (Carregadas dinamicamente após o login)
+let CONFIG = {
+    YT_API_KEY: "",
+    FIREBASE_URL: ""
 };
 
 // Estado Global da Aplicação
@@ -85,6 +96,11 @@ function checkSession() {
         const session = JSON.parse(loginData);
         if (Date.now() - session.timestamp < 2 * 60 * 60 * 1000) {
             currentUser = session.user;
+            
+            // Injeta os dados de configuração específicos deste usuário antes de iniciar o app
+            CONFIG.FIREBASE_URL = USERS_DATABASE[currentUser].firebaseUrl;
+            CONFIG.YT_API_KEY = USERS_DATABASE[currentUser].ytApiKey;
+
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
             carregarTemaDoUsuarioLogado(currentUser);
@@ -129,6 +145,11 @@ function handleLogin() {
     
     if (USERS_DATABASE[inputUser] && USERS_DATABASE[inputUser].password === inputPass) {
         currentUser = inputUser;
+        
+        // Ativa dinamicamente o link do Firebase e a Chave de API correspondente ao usuário que entrou
+        CONFIG.FIREBASE_URL = USERS_DATABASE[inputUser].firebaseUrl;
+        CONFIG.YT_API_KEY = USERS_DATABASE[inputUser].ytApiKey;
+
         localStorage.setItem('streamhub_session', JSON.stringify({ user: inputUser, timestamp: Date.now() }));
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('app-container').classList.remove('hidden');
@@ -140,6 +161,10 @@ function handleLogin() {
 function handleLogoutActions() {
     localStorage.removeItem('streamhub_session');
     currentUser = "";
+    // Reseta as configurações ativas por segurança
+    CONFIG.FIREBASE_URL = "";
+    CONFIG.YT_API_KEY = "";
+
     if (ytPlayer) { try { ytPlayer.stopVideo(); } catch(e){} }
     if (document.getElementById('universal-player')) document.getElementById('universal-player').src = "";
     if (document.getElementById('raw-player')) { document.getElementById('raw-player').pause(); document.getElementById('raw-player').src = ""; }
@@ -490,7 +515,6 @@ function renderCrudManager() {
     categories.sort().forEach(cat => {
         if(!cat) return;
         
-        // 1. Linha da Categoria (Sempre Editável)
         const catRow = createCrudRow(cat, 'categoria', () => { let n = prompt("Novo nome para a Categoria:", cat); if(n && n.trim() !== "") renomearCategoriaCompleta(cat, n.trim()); }, () => { if(confirm(`Excluir ${cat}?`)) deletarCategoriaCompleta(cat); }, () => downloadJSON(database.filter(item => item.categoria === cat), `cat_${cat}`));
         const subContainer = document.createElement('div'); subContainer.style.display = expandedCrudCats[cat] ? 'block' : 'none';
         catRow.addEventListener('click', (e) => { if(e.target.closest('.crud-actions')) return; expandedCrudCats[cat] = !expandedCrudCats[cat]; subContainer.style.display = expandedCrudCats[cat] ? 'block' : 'none'; });
@@ -501,7 +525,6 @@ function renderCrudManager() {
         if(canaisDinamicos[nodeName]) subcategories.push("Vídeos Recentes");
 
         subcategories.sort().forEach(sub => {
-            // CORREÇÃO VISUAL: Se NÃO for canal dinâmico ("Vídeos Recentes"), injeta a função de edição. O botão irá aparecer imediatamente!
             const subRow = createCrudRow(sub, 'subcategoria', sub === "Vídeos Recentes" ? null : () => { let n = prompt("Novo nome para a Subcategoria:", sub); if(n && n.trim() !== "") renomearSubcategoriaCompleta(cat, sub, n.trim()); }, () => { if(confirm(`Excluir ${sub}?`)) deletarSubcategoria(cat, sub); }, () => downloadJSON(database.filter(item => item.categoria === cat && item.subcategoria === sub), `sub_${sub}`));
             const mediaContainer = document.createElement('div'); mediaContainer.style.display = expandedCrudSubs[cat + '_' + sub] ? 'block' : 'none';
             subRow.addEventListener('click', (e) => { if(e.target.closest('.crud-actions')) return; expandedCrudSubs[cat + '_' + sub] = !expandedCrudSubs[cat + '_' + sub]; mediaContainer.style.display = expandedCrudSubs[cat + '_' + sub] ? 'block' : 'none'; });
@@ -522,7 +545,6 @@ function renderCrudManager() {
     });
 }
 
-// Injeta cirurgicamente as ações. Se 'onEdit' existir, renderiza o botão na interface gráfica.
 function createCrudRow(title, type, onEdit, onDel, onExp) {
     const row = document.createElement('div'); row.className = `crud-item ${type === 'subcategoria' ? 'sub-level' : type === 'mídia' ? 'track-level' : ''}`;
     let icon = type === 'categoria' ? '<i class="fas fa-folder"></i>' : (type === 'subcategoria' ? '<i class="fas fa-video"></i>' : '<i class="fas fa-play-circle"></i>');
@@ -713,7 +735,6 @@ async function renomearCategoriaCompleta(antiga, nova) {
     } catch(e) { alert("Erro."); }
 }
 
-// MOTOR EM LOTE: Altera o nome da subcategoria de todas as mídias afetadas de uma vez só no Firebase
 async function renomearSubcategoriaCompleta(cat, antigaSub, novaSub) {
     try {
         const alvos = database.filter(item => item.categoria === cat && item.subcategoria === antigaSub);
