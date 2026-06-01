@@ -9,8 +9,8 @@ const USERS_DATABASE = {
         firebaseUrl: "https://workin--music-default-rtdb.firebaseio.com/midias.json",
         ytApiKey: "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ"
     },
-    "admin2": { 
-        password: "456", 
+    "dipriv": { 
+        password: "arcnet215", 
         defaultColor: "#e74c3c",
         firebaseUrl: "https://dipriv-47697-default-rtdb.firebaseio.com/.json", // Link exclusivo do Admin2
         ytApiKey: "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk" // API Key exclusiva do Admin2
