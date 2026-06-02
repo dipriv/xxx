@@ -19,13 +19,13 @@ if (!firebase.apps.length) {
 // Mapeamento Multi-Tenant por E-mail (Sem palavras-passe expostas no código)
 const USERS_DATABASE = {
     "diego@midias.com": { 
-        defaultColor: "#ff0000",
+        defaultColor: "#11ffcf",
         firebaseUrl: "https://workin--music-default-rtdb.firebaseio.com/midias.json",
         ytApiKey: "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ"
     },
-    "diego@canais.com": { 
-        defaultColor: "#096be5",
-        firebaseUrl: "https://workin--music-default-rtdb.firebaseio.com/canais.json",
+    "dipriv@xxx.com": { 
+        defaultColor: "#ff0000",
+        firebaseUrl: "https://dipriv-47697-default-rtdb.firebaseio.com/.json",
         ytApiKey: "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk"
     }
 };
