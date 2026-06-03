@@ -19,7 +19,7 @@ const USERS_DATABASE = {
     "diego@midias.com": { 
         defaultColor: "#096be5",
         firebaseUrl: "https://workin--music-default-rtdb.firebaseio.com/midias.json",
-        ytApiKey: "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ"
+        ytApiKey: "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk"
     },
     "dipriv@xxx.com": { 
         defaultColor: "#ff0000",
