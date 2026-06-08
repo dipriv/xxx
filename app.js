@@ -18,12 +18,12 @@ if (!firebase.apps.length) {
 const USERS_DATABASE = {
     "diego@midias.com": { 
         defaultColor: "#11ffcf",
-        firebaseUrl: "https://workin--music-default-rtdb.firebaseio.com/midias.json",
+        firebaseUrl: "https://dipriv-47697-default-rtdb.firebaseio.com/midias.json",
         ytApiKey: "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk"
     },
     "dipriv@xxx.com": { 
         defaultColor: "#ff0000",
-        firebaseUrl: "https://dipriv-47697-default-rtdb.firebaseio.com/.json",
+        firebaseUrl: "https://dipriv-47697-default-rtdb.firebaseio.com/xxx.json",
         ytApiKey: "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk"
     },
 };
