@@ -27,7 +27,7 @@
             <form id="form-login">
                 <div class="input-group">
                     <label for="login-user">E-mail</label>
-                    <input type="email" id="login-user" placeholder="Ex: admin@streamhub.com" required autocomplete="email">
+                    <input type="email" id="login-user" placeholder="Ex: meunome@meuemail.com" required autocomplete="email">
                 </div>
                 <div class="input-group">
                     <label for="login-pass">Senha</label>
@@ -127,7 +127,7 @@
             </div>
             <div class="player-content">
                 <div id="yt-player" class="hidden"></div>
-                <iframe id="universal-player" class="hidden" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                <iframe id="universal-player" class="hidden" allow="autoplay; encrypted-media" allowfullscreen playsinline="1"></iframe>
                 <video id="raw-player" class="hidden" controls autoplay playsinline></video>
             </div>
         </div>
