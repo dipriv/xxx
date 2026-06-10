@@ -19,10 +19,10 @@ if (!firebase.apps.length) {
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 
 const USERS_DATABASE = {
-    "diego@midias.com": { 
+    "dipriv@xxx2.com": { 
         defaultColor: "#11ffcf",
-        firebaseUrl: "https://workin--music-default-rtdb.firebaseio.com/midias.json",
-        ytApiKey: "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ"
+        firebaseUrl: "https://dipriv-47697-default-rtdb.firebaseio.com/xxx2.json",
+        ytApiKey: "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk"
     },
     "dipriv@xxx.com": { 
         defaultColor: "#ff0000",
