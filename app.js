@@ -15,6 +15,9 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
+// Provedor de Autenticação do Google
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+
 const USERS_DATABASE = {
     "diego@midias.com": { 
         defaultColor: "#11ffcf",
@@ -39,7 +42,8 @@ let selectedSubcategory = '';
 let currentPlaylist = [];
 let currentTrackIndex = 0;
 let ytPlayer = null;
-let lastYtSearchResults = []; 
+let lastYtSearchResults = [];
+let lastLocalSearchResults = []; // Guarda os resultados da busca interna do acervo
 let activeEditingIndex = null;
 let canalSelecionadoProvisorio = null;
 
@@ -52,14 +56,9 @@ function obterUrlNodoItem(idItem = null) {
 }
 
 function obterUrlBaseCanais() {
-    let urlObjeto = new URL(CONFIG.FIREBASE_URL);
-    return `${urlObjeto.origin}/canais_dinamicos.json`;
-}
-
-function obterUrlCanalIndividual(nodeName) {
-    let urlObjeto = new URL(CONFIG.FIREBASE_URL);
-    return `${urlObjeto.origin}/canais_dinamicos/${nodeName}.json`;
-}
+    // Substitui 'midias.json' por 'canais_dinamicos.json' na URL atual do usuário
+    return CONFIG.FIREBASE_URL.replace("midias.json", "canais_dinamicos.json");
+} 
 
 function aplicarCorTema(hexColor) {
     document.documentElement.style.setProperty('--theme-color', hexColor);
@@ -93,17 +92,28 @@ function checkSession() {
     firebase.auth().onAuthStateChanged((user) => {
         if (user && user.email) {
             const emailLogado = user.email.toLowerCase();
+            
+            // 1. Verifica se é um usuário do login convencional (antigo)
             if (USERS_DATABASE[emailLogado]) {
                 currentUser = emailLogado;
                 CONFIG.FIREBASE_URL = USERS_DATABASE[currentUser].firebaseUrl;
                 CONFIG.YT_API_KEY = USERS_DATABASE[currentUser].ytApiKey;
+            } 
+            // 2. Se não estiver no USERS_DATABASE, significa que logou pelo Google!
+            else {
+                currentUser = emailLogado;
+                // Cria um nó exclusivo usando o UID do Firebase para evitar conflitos e caracteres proibidos
+                CONFIG.FIREBASE_URL = `https://workin--music-default-rtdb.firebaseio.com/usuarios/${user.uid}/midias.json`;
                 
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('app-container').classList.remove('hidden');
-                carregarTemaDoUsuarioLogado(currentUser);
-                initApp();
-                return;
+                // Usamos uma API Key padrão para os usuários do Google (pode usar a do Diego Mídias como fallback)
+                CONFIG.YT_API_KEY = "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ"; 
             }
+            
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            carregarTemaDoUsuarioLogado(user.uid); 
+            initApp();
+            return;
         }
         limparInterfaceLocal();
     });
@@ -134,7 +144,7 @@ function handleLogin() {
     firebase.auth().signInWithEmailAndPassword(inputEmail, inputPass)
         .catch((error) => {
             alert("Erro na Autenticação: " + error.message);
-            btnLogin.innerText = "Entrar no Painel"; btnLogin.disabled = false;
+            btnLogin.innerText = "Entrar"; btnLogin.disabled = false;
         });
 }
 
@@ -151,11 +161,15 @@ function limparInterfaceLocal() {
     if (document.getElementById('login-user')) document.getElementById('login-user').value = "";
     if (document.getElementById('login-pass')) document.getElementById('login-pass').value = "";
     if (document.getElementById('btn-login')) {
-        document.getElementById('btn-login').innerText = "Entrar no Painel";
+        document.getElementById('btn-login').innerText = "Entrar";
         document.getElementById('btn-login').disabled = false;
     }
     if (document.getElementById('app-container')) document.getElementById('app-container').classList.add('hidden');
     if (document.getElementById('login-screen')) document.getElementById('login-screen').classList.remove('hidden');
+    if (document.getElementById('btn-google-login')) {
+        document.getElementById('btn-google-login').innerHTML = '<i class="fab fa-google"></i> Entrar com o Google';
+        document.getElementById('btn-google-login').disabled = false;
+    }
 }
 
 async function initApp() { await carregarCanaisDinamicos(); await recarregarDadosDoBanco(); }
@@ -172,7 +186,15 @@ async function recarregarDadosDoBanco() {
 }
 
 async function carregarCanaisDinamicos() {
-    try { const res = await fetch(obterUrlBaseCanais()); const data = await res.json(); canaisDinamicos = data || {}; } catch (e) { console.error("Erro canais:", e); }
+    try { 
+        const res = await fetch(obterUrlBaseCanais()); 
+        if (!res.ok) { canaisDinamicos = {}; return; }
+        const data = await res.json(); 
+        canaisDinamicos = data || {}; 
+    } catch (e) { 
+        console.error("Erro canais:", e); 
+        canaisDinamicos = {}; 
+    }
 }
 
 function alimentarSeletorCategoriasCanais() {
@@ -241,6 +263,24 @@ function renderMosaic() {
                 btnList.onclick = (e) => { e.preventDefault(); e.stopPropagation(); peekPlaylistContents(item.youtubeId); }; btnGroup.appendChild(btnList);
             }
             card.appendChild(btnGroup); grid.appendChild(card);
+        });
+    }
+    else if (currentView === 'search_local_results') {
+        if (bcSrc) {
+            bcSrc.classList.remove('hidden');
+            bcSrc.innerHTML = ` &gt; <i class="fas fa-search"></i> Resultados Locais para: "${document.getElementById('search-internal-input').value}"`;
+        }
+        
+        if (lastLocalSearchResults.length === 0) {
+            grid.innerHTML = '<h3 style="color: var(--text-gray); padding: 20px;">Nenhuma mídia encontrada no seu acervo local.</h3>';
+            return;
+        }
+
+        currentPlaylist = lastLocalSearchResults;
+
+        lastLocalSearchResults.forEach((track, index) => {
+            const realIndex = database.findIndex(dbItem => dbItem.link === track.link && dbItem.título === track.título);
+            grid.appendChild(createCard(track.título, track.capa, false, false, () => { playTrack(index); }, realIndex));
         });
     }
 }
@@ -411,14 +451,14 @@ function playTrack(index) {
                 videoId: vId, 
                 playerVars: { 'autoplay': 1, 'playsinline': 1, 'enablejsapi': 1 }, 
                 events: { 
-                    'onReady': () => { aplicarVolume(); }, // Aplica volume assim que o YouTube carregar
+                    'onReady': () => { aplicarVolume(); }, 
                     'onStateChange': (e) => { if(e.data === 0 && currentTrackIndex + 1 < currentPlaylist.length) playTrack(currentTrackIndex + 1); } 
                 } 
             }); 
         } 
         else { 
             ytPlayer.loadVideoById(vId); 
-            setTimeout(() => aplicarVolume(), 300); // Aguarda e aplica o volume
+            setTimeout(() => aplicarVolume(), 300); 
         }
     } 
     else if(linkOriginal.toLowerCase().endsWith('.mp4') || linkOriginal.toLowerCase().endsWith('.mkv') || linkOriginal.toLowerCase().includes('raw.githubusercontent')) {
@@ -442,17 +482,14 @@ function aplicarVolume() {
     let vol = parseInt(slider.value);
     let isMuted = btnMute.getAttribute('data-muted') === 'true';
 
-    // Atualiza o ícone do botão
     btnMute.innerHTML = isMuted || vol === 0 ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
 
-    // Aplica no Player MP4 Nativo
     const rawPlayer = document.getElementById('raw-player');
     if (rawPlayer) {
         rawPlayer.volume = vol / 100;
         rawPlayer.muted = isMuted;
     }
 
-    // Aplica no Player do YouTube
     if (ytPlayer && typeof ytPlayer.setVolume === 'function') {
         if (isMuted) ytPlayer.mute();
         else { ytPlayer.unMute(); ytPlayer.setVolume(vol); }
@@ -511,6 +548,24 @@ function createCrudRow(title, type, onEdit, onDel, onExp) {
     row.innerHTML = `<span>${icon} <strong>[${type.toUpperCase()}]</strong> ${title}</span><div class="crud-actions">${onEdit ? '<button class="crud-btn btn-edit"><i class="fas fa-edit"></i></button>' : ''}<button class="crud-btn btn-del"><i class="fas fa-trash"></i></button><button class="crud-btn btn-exp"><i class="fas fa-download"></i></button></div>`;
     if(onEdit) row.querySelector('.btn-edit').onclick = (e) => { e.stopPropagation(); onEdit(); };
     row.querySelector('.btn-del').onclick = (e) => { e.stopPropagation(); onDel(); }; row.querySelector('.btn-exp').onclick = (e) => { e.stopPropagation(); onExp(); }; return row;
+}
+
+// CORREÇÃO AUXILIAR: Renomear Categorias dinamicamente no Firebase
+async function renomearCategoriaCompleta(antiga, nova) { 
+    try { 
+        database.forEach(item => { if(item.categoria === antiga) item.categoria = nova; }); 
+        await empurrarBancoIntegralParaServidor(); 
+        const oldNodeName = btoa(unescape(encodeURIComponent(antiga))).replace(/=/g, ""); 
+        if (canaisDinamicos[oldNodeName]) { 
+            const newNodeName = btoa(unescape(encodeURIComponent(nova))).replace(/=/g, ""); 
+            let urlNovoCanal = obterUrlBaseCanais().replace(".json", `/${newNodeName}.json`);
+            let urlAntigoCanal = obterUrlBaseCanais().replace(".json", `/${oldNodeName}.json`);
+            await fetch(urlNovoCanal, { method: "PUT", body: JSON.stringify(canaisDinamicos[oldNodeName]) }); 
+            await fetch(urlAntigoCanal, { method: "DELETE" }); 
+        } 
+        await recarregarDadosDoBanco(); 
+        renderCrudManager(); 
+    } catch(e){ console.error("Erro ao renomear categoria:", e); } 
 }
 
 function openAdvancedEditModal(index) {
@@ -601,8 +656,21 @@ async function empurrarBancoIntegralParaServidor() {
 
 async function deletarMidiaUnica(indexNoBanco) { try { database.splice(indexNoBanco, 1); await empurrarBancoIntegralParaServidor(); await recarregarDadosDoBanco(); renderCrudManager(); } catch(e){} }
 async function deletarSubcategoria(cat, sub) { try { database = database.filter(item => !(item.categoria === cat && item.subcategoria === sub)); await empurrarBancoIntegralParaServidor(); await recarregarDadosDoBanco(); renderCrudManager(); } catch(e){} }
-async function deletarCategoriaCompleta(cat) { try { database = database.filter(item => item.categoria !== cat); await empurrarBancoIntegralParaServidor(); await fetch(obterUrlCanalIndividual(btoa(unescape(encodeURIComponent(cat))).replace(/=/g, "")), { method: 'DELETE' }); currentView = 'categories'; selectedCategory = ''; selectedSubcategory = ''; await recarregarDadosDoBanco(); renderCrudManager(); } catch(e){} }
-async function renomearCategoriaCompleta(antiga, nova) { try { database.forEach(item => { if(item.categoria === antiga) item.categoria = nova; }); await empurrarBancoIntegralParaServidor(); const oldNodeName = btoa(unescape(encodeURIComponent(antiga))).replace(/=/g, ""); if (canaisDinamicos[oldNodeName]) { const newNodeName = btoa(unescape(encodeURIComponent(nova))).replace(/=/g, ""); await fetch(obterUrlCanalIndividual(newNodeName), { method: "PUT", body: JSON.stringify(canaisDinamicos[oldNodeName]) }); await fetch(obterUrlCanalIndividual(oldNodeName), { method: "DELETE" }); } await recarregarDadosDoBanco(); renderCrudManager(); } catch(e){} }
+async function deletarCategoriaCompleta(cat) { 
+    try { 
+        database = database.filter(item => item.categoria !== cat); 
+        await empurrarBancoIntegralParaServidor(); 
+        const nodeName = btoa(unescape(encodeURIComponent(cat))).replace(/=/g, "");
+        let urlCanalIndividual = obterUrlBaseCanais().replace(".json", `/${nodeName}.json`);
+        await fetch(urlCanalIndividual, { method: 'DELETE' }); 
+        currentView = 'categories'; 
+        selectedCategory = ''; 
+        selectedSubcategory = ''; 
+        await recarregarDadosDoBanco(); 
+        renderCrudManager(); 
+    } catch(e){ console.error("Erro ao deletar categoria completa:", e); } 
+}
+
 async function renomearSubcategoriaCompleta(cat, antigaSub, novaSub) { try { database.forEach(item => { if(item.categoria === cat && item.subcategoria === antigaSub) item.subcategoria = novaSub; }); await empurrarBancoIntegralParaServidor(); await recarregarDadosDoBanco(); renderCrudManager(); } catch(e){} }
 
 function downloadJSON(obj, filename) {
@@ -638,6 +706,9 @@ function handleToggleSidebar() {
     else { sidebar.classList.toggle('collapsed'); sidebar.classList.remove('open'); }
 }
 
+// ==========================================
+// DELEGAÇÃO GLOBAL DE EVENTOS (À PROVA DE FALHAS)
+// ==========================================
 function switchTabs(targetTabId, activeTriggerBtnId) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); 
     document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
@@ -647,9 +718,6 @@ function switchTabs(targetTabId, activeTriggerBtnId) {
     if (targetTab) targetTab.classList.remove('hidden');
 }
 
-// ==========================================
-// DELEGAÇÃO GLOBAL DE EVENTOS (À PROVA DE FALHAS)
-// ==========================================
 function setupEventListeners() {
     console.log("Configurando Delegação de Eventos...");
 
@@ -663,6 +731,20 @@ function setupEventListeners() {
             const row = document.getElementById('mobile-search-row');
             if(row) { row.classList.toggle('hidden'); if(!row.classList.contains('hidden')) document.getElementById('search-yt-input-mobile').focus(); }
         }
+        
+        // --- LOGIN COM O GOOGLE ---
+        if (e.target.closest('#btn-google-login')) {
+            const btnGoogle = e.target.closest('#btn-google-login');
+            btnGoogle.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...';
+            btnGoogle.disabled = true;
+
+            firebase.auth().signInWithPopup(googleProvider)
+                .catch((error) => {
+                    alert("Erro ao logar com o Google: " + error.message);
+                    btnGoogle.innerHTML = '<i class="fab fa-google"></i> Entrar com o Google';
+                    btnGoogle.disabled = false;
+                });
+        }
 
         // --- ABAS E MODAL ADMIN ---
         if (e.target.closest('#btn-open-admin')) { 
@@ -671,12 +753,10 @@ function setupEventListeners() {
         }
         if (e.target.closest('#btn-close-admin')) document.getElementById('admin-modal')?.classList.add('hidden');
         
-        // Clicar nas abas
         if (e.target.closest('#tab-trigger-add')) switchTabs('add-tab', 'tab-trigger-add');
         if (e.target.closest('#tab-trigger-channel')) switchTabs('channel-tab', 'tab-trigger-channel');
         if (e.target.closest('#tab-trigger-manage')) { switchTabs('manage-tab', 'tab-trigger-manage'); renderCrudManager(); }
 
-        // Botões de ação dentro do Admin
         if (e.target.closest('#btn-save-media')) saveMediaToDatabase(e);
         if (e.target.closest('#btn-submit-edit-media')) saveAdvancedEditChanges(e);
         if (e.target.closest('#btn-cancel-edit-media') || e.target.closest('#btn-cancel-edit-media-2')) {
@@ -688,7 +768,8 @@ function setupEventListeners() {
             try {
                 const payload = { channelId: canalSelecionadoProvisorio.channelId, uploadsPlaylistId: canalSelecionadoProvisorio.channelId.replace(/^UC/, "UU"), title: canalSelecionadoProvisorio.title, thumb: canalSelecionadoProvisorio.thumb };
                 const nodeName = btoa(unescape(encodeURIComponent(catDestino))).replace(/=/g, "");
-                await fetch(obterUrlCanalIndividual(nodeName), { method: "PUT", body: JSON.stringify(payload) });
+                let urlCanalIndividual = obterUrlBaseCanais().replace(".json", `/${nodeName}.json`);
+                await fetch(urlCanalIndividual, { method: "PUT", body: JSON.stringify(payload) });
                 alert("Canal vinculado!"); document.getElementById("channel-preview").style.display = "none"; document.getElementById('search-channel-input').value = "";
                 canalSelecionadoProvisorio = null; initApp();
             } catch(err) { alert("Erro ao salvar canal."); }
@@ -714,7 +795,7 @@ function setupEventListeners() {
             if(currentUser) { localStorage.removeItem(`streamhub_theme_${currentUser}`); let c = USERS_DATABASE[currentUser] ? USERS_DATABASE[currentUser].defaultColor : "#ff0000"; aplicarCorTema(c); posicionarSetaPelaCor(c); }
         }
 
-                // --- CONTROLES DO PLAYER ---
+        // --- CONTROLES DO PLAYER ---
         if (e.target.closest('#btn-next-track')) { if(currentTrackIndex + 1 < currentPlaylist.length) playTrack(currentTrackIndex + 1); }
         if (e.target.closest('#btn-prev-track')) { if(currentTrackIndex > 0) playTrack(currentTrackIndex - 1); }
         if (e.target.closest('#btn-close-player')) {
@@ -724,7 +805,7 @@ function setupEventListeners() {
         if (e.target.closest('#btn-mute-toggle')) {
             const btnMute = e.target.closest('#btn-mute-toggle');
             let isMuted = btnMute.getAttribute('data-muted') === 'true';
-            btnMute.setAttribute('data-muted', !isMuted); // Alterna estado
+            btnMute.setAttribute('data-muted', !isMuted); 
             aplicarVolume();
         }
 
@@ -741,7 +822,37 @@ function setupEventListeners() {
     // Filtros e Inputs (Eventos de teclado)
     document.getElementById('search-yt-input')?.addEventListener('keypress', (e) => { if(e.key === 'Enter') searchYouTubeGlobal(e.target.value); });
     document.getElementById('search-yt-input-mobile')?.addEventListener('keypress', (e) => { if(e.key === 'Enter') searchYouTubeGlobal(e.target.value); });
-    document.getElementById('search-internal-input')?.addEventListener('input', (e) => filterInternalDatabase(e.target.value));
+    
+    document.getElementById('search-internal-input')?.addEventListener('input', (e) => {
+        const termo = e.target.value.trim();
+        filterInternalDatabase(termo);
+        if (termo === "") {
+            currentView = 'categories';
+            selectedCategory = '';
+            selectedSubcategory = '';
+            renderMosaic();
+        }
+    });
+
+    document.getElementById('search-internal-input')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const termo = e.target.value.toLowerCase().trim();
+            if (!termo) return;
+
+            lastLocalSearchResults = database.filter(item => 
+                item.título.toLowerCase().includes(termo) || 
+                item.categoria.toLowerCase().includes(termo) || 
+                (item.subcategoria && item.subcategoria.toLowerCase().includes(termo))
+            );
+
+            currentView = 'search_local_results';
+            renderMosaic();
+            
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar')?.classList.remove('open');
+            }
+        }
+    });
 
     // Importar via arquivo JSON
     document.getElementById('file-import-json')?.addEventListener('change', (e) => {
@@ -751,15 +862,14 @@ function setupEventListeners() {
         }; reader.readAsText(file);
     });
 
-    // Dispara a mudança de volume enquanto você arrasta a barra
+    // Controle de volume slider
     document.addEventListener('input', (e) => {
         if (e.target.id === 'player-volume-slider') {
             const btnMute = document.getElementById('btn-mute-toggle');
-            if (btnMute) btnMute.setAttribute('data-muted', 'false'); // Tira o mute se mexer na barra
+            if (btnMute) btnMute.setAttribute('data-muted', 'false'); 
             aplicarVolume();
         }
     });
-
 
     configurarEventosBuscaCanal();
     inicializarSeletorCoresLinear();
