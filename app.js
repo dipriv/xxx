@@ -2,13 +2,13 @@
 // CONFIGURAÇÃO INICIAL E CREDENCIAIS DO FIREBASE
 // ==========================================
 const firebaseConfig = {
-    apiKey: "AIzaSyA3obnKmTrF4zH6pdV8ogqZ88r7uACy3BI", 
-    authDomain: "workin--music.firebaseapp.com",
-    databaseURL: "https://workin--music-default-rtdb.firebaseio.com",
-    projectId: "workin--music",
-    storageBucket: "workin--music.firebasestorage.app",
-    messagingSenderId: "588256543173",
-    appId: "1:588256543173:web:eddf01b30628df90ca8bac"
+    apiKey: "AIzaSyCB_oJUAtVE8cSotjRT6Hiv7TAJzzeAPiw", 
+    authDomain: "dipriv-47697.firebaseapp.com",
+    databaseURL: "https://dipriv-47697-default-rtdb.firebaseio.com",
+    projectId: "dipriv-47697",
+    storageBucket: "dipriv-47697.firebasestorage.app",
+    messagingSenderId: "883733352905",
+    appId: "1:883733352905:web:109c683493875c1bc39818"
 };
 
 if (!firebase.apps.length) {
@@ -21,12 +21,12 @@ const googleProvider = new firebase.auth.GoogleAuthProvider();
 const USERS_DATABASE = {
     "diego@midias.com": { 
         defaultColor: "#11ffcf",
-        firebaseUrl: "https://workin--music-default-rtdb.firebaseio.com/midias.json",
-        ytApiKey: "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ"
+        firebaseUrl: "https://dipriv-47697-default-rtdb.firebaseio.com/midias.json",
+        ytApiKey: "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk"
     },
-    "diego@canais.com": { 
+    "dipriv@xxx.com": { 
         defaultColor: "#ff0000",
-        firebaseUrl: "https://workin--music-default-rtdb.firebaseio.com/canais.json",
+        firebaseUrl: "https://dipriv-47697-default-rtdb.firebaseio.com/xxx.json",
         ytApiKey: "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk"
     },
 };
