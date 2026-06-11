@@ -461,30 +461,35 @@ function playTrack(index) {
             setTimeout(() => aplicarVolume(), 300); 
         }
     } 
-    else if(linkOriginal.toLowerCase().endsWith('.mp4') || linkOriginal.toLowerCase().endsWith('.mkv') || linkOriginal.toLowerCase().includes('raw.githubusercontent')) {
+    else if(linkOriginal.toLowerCase().endsWith('.mp4') || linkOriginal.toLowerCase().endsWith('.mkv') || linkOriginal.toLowerCase().includes('raw.githubusercontent') || linkOriginal.includes('docs.google.com/uc?export=download')) {
         if (rawPlayerEl) { rawPlayerEl.classList.remove('hidden'); rawPlayerEl.src = linkOriginal; rawPlayerEl.play(); aplicarVolume(); rawPlayerEl.onended = () => { if(currentTrackIndex + 1 < currentPlaylist.length) playTrack(currentTrackIndex + 1); }; }
     } 
-        else { 
+    else { 
         if (univPlayerEl) { 
             univPlayerEl.classList.remove('hidden'); 
             
             let urlTratada = linkOriginal;
             
-            // Se for link do Archive.org, faz a conversão padrão que você já tinha
+            // 1. Tratamento para links do Archive.org
             if (urlTratada.includes("archive.org/details/")) {
                 urlTratada = urlTratada.replace("archive.org/details/", "archive.org/embed/");
             } 
-            // Se for uma Playlist do YouTube carregada no player universal, injeta as travas mobile
+            // 2. Tratamento para Playlists do YouTube no player universal
             else if (urlTratada.includes("youtube.com/embed/videoseries")) {
-                // Se a URL já tiver parâmetros, adiciona com '&', se não, com '?'
                 const separador = urlTratada.includes("?") ? "&" : "?";
                 urlTratada = `${urlTratada}${separador}playsinline=1&enablejsapi=1&origin=${window.location.origin}`;
+            }
+                        // 3. NOVA TRAVA MOBILE: Tratamento para embeds do Google Drive (/preview)
+            else if (urlTratada.includes("drive.google.com/file/d/")) {
+                // Mantém o link original de preview e adiciona travas para não fugir da página
+                const separador = urlTratada.includes("?") ? "&" : "?";
+                urlTratada = `${urlTratada}${separador}playsinline=1&origin=${window.location.origin}`;
             }
             
             univPlayerEl.src = urlTratada; 
         } 
     }
-}
+} 
 
 function extractYoutubeId(url) {
     if (!url || url.includes('videoseries')) return null; 
@@ -725,9 +730,6 @@ function handleToggleSidebar() {
     else { sidebar.classList.toggle('collapsed'); sidebar.classList.remove('open'); }
 }
 
-// ==========================================
-// DELEGAÇÃO GLOBAL DE EVENTOS (À PROVA DE FALHAS)
-// ==========================================
 function switchTabs(targetTabId, activeTriggerBtnId) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); 
     document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
@@ -737,6 +739,9 @@ function switchTabs(targetTabId, activeTriggerBtnId) {
     if (targetTab) targetTab.classList.remove('hidden');
 }
 
+// ==========================================
+// DELEGAÇÃO GLOBAL DE EVENTOS (À PROVA DE FALHAS)
+// ==========================================
 function setupEventListeners() {
     console.log("Configurando Delegação de Eventos...");
 
@@ -859,14 +864,14 @@ function setupEventListeners() {
             if (!termo) return;
 
             lastLocalSearchResults = database.filter(item => {
-    const titulo = item.título || item.titulo || ""; // aceita com ou sem acento
-    const categoria = item.categoria || item.Categoria || "";
-    const subcategoria = item.subcategoria || "";
+                const titulo = item.título || item.titulo || ""; 
+                const categoria = item.categoria || item.Categoria || "";
+                const subcategoria = item.subcategoria || "";
 
-    return titulo.toLowerCase().includes(termo) || 
-           categoria.toLowerCase().includes(termo) || 
-           subcategoria.toLowerCase().includes(termo);
-});
+                return titulo.toLowerCase().includes(termo) || 
+                       categoria.toLowerCase().includes(termo) || 
+                       subcategoria.toLowerCase().includes(termo);
+            });
 
             currentView = 'search_local_results';
             renderMosaic();
@@ -903,4 +908,4 @@ document.addEventListener('DOMContentLoaded', () => {
     configurarEventosLogin();
     setupEventListeners();
     checkSession();
-});
+}); 
