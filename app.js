@@ -29,7 +29,7 @@ const USERS_DATABASE = {
         firebaseUrl: "https://dipriv-47697-default-rtdb.firebaseio.com/xxx.json",
         ytApiKey: "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk"
     },
-};
+}; 
 
 let CONFIG = { YT_API_KEY: "", FIREBASE_URL: "" };
 
