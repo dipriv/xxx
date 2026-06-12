@@ -2,13 +2,13 @@
 // CONFIGURAÇÃO INICIAL DO FIREBASE (APENAS CHAVES PÚBLICAS)
 // ==========================================
 const firebaseConfig = {
-    apiKey: "AIzaSyCB_oJUAtVE8cSotjRT6Hiv7TAJzzeAPiw", 
-    authDomain: "dipriv-47697.firebaseapp.com",
-    databaseURL: "https://dipriv-47697-default-rtdb.firebaseio.com",
-    projectId: "dipriv-47697",
-    storageBucket: "dipriv-47697.firebasestorage.app",
-    messagingSenderId: "883733352905",
-    appId: "1:883733352905:web:109c683493875c1bc39818"
+    apiKey: "AIzaSyA3obnKmTrF4zH6pdV8ogqZ88r7uACy3BI", 
+    authDomain: "workin--music.firebaseapp.com",
+    databaseURL: "https://workin--music-default-rtdb.firebaseio.com",
+    projectId: "workin--music",
+    storageBucket: "workin--music.firebasestorage.app",
+    messagingSenderId: "588256543173",
+    appId: "1:588256543173:web:eddf01b30628df90ca8bac"
 };
 
 if (!firebase.apps.length) {
@@ -82,7 +82,7 @@ function checkSession() {
             currentUserUid = user.uid;
             
             try {
-                                // Remove qualquer barra no final da URL do banco para não duplicar na concatenação
+                // Remove qualquer barra no final da URL do banco para não duplicar na concatenação
                 const urlBaseBanco = firebaseConfig.databaseURL.replace(/\/$/, "");
 
                 // Busca o perfil do usuário de forma 100% dinâmica baseada no projeto do topo
@@ -95,7 +95,7 @@ function checkSession() {
                         cor_tema: "#ff0000",
                         tema: "",
                         firebaseUrl: `${urlBaseBanco}/usuarios/${currentUserUid}/midias.json`,
-                        ytApiKey: "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ"
+                        ytApiKey: "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk"
                     };
                     await salvarPreferenciaNoFirebase(perfil);
                 }
@@ -818,7 +818,6 @@ function setupEventListeners() {
         }
         if (e.target.closest('#btn-reset-theme')) {
             if(currentUserUid) {
-                // Ao dar reset, devolve as configurações padrão para a nuvem
                 let padrao = { cor_tema: "#ff0000" };
                 aplicarCorTema("#ff0000"); posicionarSetaPelaCor("#ff0000");
                 salvarPreferenciaNoFirebase(padrao);
@@ -838,19 +837,35 @@ function setupEventListeners() {
             aplicarVolume();
         }
 
-        // --- SISTEMA DE SELEÇÃO DE TEMA SINCRO EM NUVEM ---
         const themeBtn = e.target.closest('[id^="theme-switch-"]');
         if (themeBtn) {
             const tema = themeBtn.id.replace('theme-switch-', '');
             const className = tema === 'youtube' ? "" : `theme-${tema}`;
             document.body.className = className;
-            // Atualiza o tema do usuário direto no Realtime Database
             salvarPreferenciaNoFirebase({ tema: className });
         }
     });
 
-    document.getElementById('search-yt-input')?.addEventListener('keypress', (e) => { if(e.key === 'Enter') searchYouTubeGlobal(e.target.value); });
-    document.getElementById('search-yt-input-mobile')?.addEventListener('keypress', (e) => { if(e.key === 'Enter') searchYouTubeGlobal(e.target.value); });
+    // --- CORREÇÃO DA BUSCA GLOBAL DO YOUTUBE (DESKTOP E MOBILE) ---
+    const tratarBuscaGlobal = (e) => {
+        if (e.key === 'Enter' || e.type === 'change') {
+            const termo = e.target.value.trim();
+            if (termo) {
+                searchYouTubeGlobal(termo);
+                // Esconde o teclado virtual no celular tirando o foco do elemento
+                e.target.blur(); 
+                // Fecha a barra de pesquisa mobile expansiva se estiver aberta
+                document.getElementById('mobile-search-row')?.classList.add('hidden');
+            }
+        }
+    };
+
+    // Escuta tanto a digitação com Enter quanto o botão de confirmação do celular
+    document.getElementById('search-yt-input')?.addEventListener('keypress', tratarBuscaGlobal);
+    document.getElementById('search-yt-input')?.addEventListener('change', tratarBuscaGlobal);
+
+    document.getElementById('search-yt-input-mobile')?.addEventListener('keypress', tratarBuscaGlobal);
+    document.getElementById('search-yt-input-mobile')?.addEventListener('change', tratarBuscaGlobal);
     
     document.getElementById('search-internal-input')?.addEventListener('input', (e) => {
         const termo = e.target.value.trim();
