@@ -63,11 +63,12 @@ function posicionarSetaPelaCor(hexColor) {
     if(hexColor.toLowerCase() === "#00f0ff") selector.style.left = "50%";
 }
 
-// Salva as preferências de customização direto no nó do usuário no Firebase
+// Salva as preferências de customização respeitando o projeto configurado no topo
 async function salvarPreferenciaNoFirebase(dadosModificados) {
-    if (!currentUserUid) return;
+    if (!currentUserUid || !firebaseConfig.databaseURL) return;
     try {
-        await fetch(`https://workin--music-default-rtdb.firebaseio.com/usuarios/${currentUserUid}.json`, {
+        const urlBaseBanco = firebaseConfig.databaseURL.replace(/\/$/, "");
+        await fetch(`${urlBaseBanco}/usuarios/${currentUserUid}.json`, {
             method: "PATCH",
             body: JSON.stringify(dadosModificados),
             headers: { 'Content-Type': 'application/json' }
@@ -81,16 +82,19 @@ function checkSession() {
             currentUserUid = user.uid;
             
             try {
-                // Busca o perfil do usuário diretamente na nuvem de forma segura usando o UID
-                let resPerfil = await fetch(`https://workin--music-default-rtdb.firebaseio.com/usuarios/${currentUserUid}.json`);
+                                // Remove qualquer barra no final da URL do banco para não duplicar na concatenação
+                const urlBaseBanco = firebaseConfig.databaseURL.replace(/\/$/, "");
+
+                // Busca o perfil do usuário de forma 100% dinâmica baseada no projeto do topo
+                let resPerfil = await fetch(`${urlBaseBanco}/usuarios/${currentUserUid}.json`);
                 let perfil = await resPerfil.json();
                 
-                // Se o perfil não existir (Ex: novo usuário via Google), cria os padrões na hora
+                // Se o perfil não existir (Ex: novo usuário via Google), cria os padrões na hora no projeto atual
                 if (!perfil) {
                     perfil = {
                         cor_tema: "#ff0000",
                         tema: "",
-                        firebaseUrl: `https://workin--music-default-rtdb.firebaseio.com/usuarios/${currentUserUid}/midias.json`,
+                        firebaseUrl: `${urlBaseBanco}/usuarios/${currentUserUid}/midias.json`,
                         ytApiKey: "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ"
                     };
                     await salvarPreferenciaNoFirebase(perfil);
