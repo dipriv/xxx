@@ -113,7 +113,7 @@ function checkSession() {
                 console.error("Erro ao inicializar perfil seguro:", err);
                 // Fallback de segurança caso a API falhe na inicialização
                 CONFIG.FIREBASE_URL = `https://workin--music-default-rtdb.firebaseio.com/usuarios/${currentUserUid}/midias.json`;
-                CONFIG.YT_API_KEY = "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ";
+                CONFIG.YT_API_KEY = "AIzaSyDNHqERli0UuPqruQwd2UPIBg7nikrjqNE";
             }
             
             document.getElementById('login-screen').classList.add('hidden');
