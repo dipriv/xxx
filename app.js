@@ -40,6 +40,63 @@ let canalSelecionadoProvisorio = null;
 let expandedCrudCats = {};
 let expandedCrudSubs = {};
 
+// Variável local para rastrear as mudanças temporárias de cor do perfil
+let corPerfilTemporaria = "";
+
+// Abre o modal de perfil e preenche os campos com os dados atuais salvos no banco
+async function abrirModalPerfil() {
+    if (!currentUserUid) return;
+    
+    // Se o aviso de novidade na tela estiver aberto, remove ele
+    document.getElementById('alert-novidade-perfil')?.remove();
+
+    try {
+        const urlBaseBanco = firebaseConfig.databaseURL.replace(/\/$/, "");
+        let res = await fetch(`${urlBaseBanco}/usuarios/${currentUserUid}.json`);
+        let perfil = await res.json();
+        
+        if (perfil) {
+            document.getElementById('profile-edit-name').value = perfil.nome || "";
+            document.getElementById('profile-edit-lastname').value = perfil.sobrenome || "";
+            
+            // Inicializa a cor padrão baseada no que está na nuvem
+            corPerfilTemporaria = perfil.cor_tema || "#ff0000";
+            const txtHexPerfil = document.getElementById('profile-theme-color-hex');
+            if(txtHexPerfil) txtHexPerfil.innerText = corPerfilTemporaria.toUpperCase();
+            
+            const selectorPerfil = document.getElementById('profile-color-spectrum-selector');
+            if(selectorPerfil) selectorPerfil.style.left = "50%"; // Posiciona no centro por padrão no carregamento
+        }
+        
+        // Exibe o modal removendo a classe hidden
+        document.getElementById('profile-modal')?.classList.remove('hidden');
+    } catch (e) {
+        console.error("Erro ao carregar dados do perfil para edição:", e);
+    }
+}
+
+// Fecha a janela de edição de perfil
+function fecharModalPerfil() {
+    document.getElementById('profile-modal')?.classList.add('hidden');
+}
+
+// Alterna visualmente entre os formulários de login e cadastro preservando a logo
+function alternarAbasLogin(modo) {
+    const formLogin = document.getElementById('form-login-fluxo');
+    const formCadastro = document.getElementById('form-cadastro-fluxo');
+    const titulo = document.getElementById('login-title');
+    
+    if (modo === 'cadastro') {
+        formLogin.classList.add('hidden');
+        formCadastro.classList.remove('hidden');
+        titulo.innerText = "Criar Conta";
+    } else {
+        formCadastro.classList.add('hidden');
+        formLogin.classList.remove('hidden');
+        titulo.innerText = "StreamHub";
+    }
+}
+
 function obterUrlNodoItem(idItem = null) {
     let urlSemJson = CONFIG.FIREBASE_URL.replace(".json", "");
     return idItem ? `${urlSemJson}/${idItem}.json` : CONFIG.FIREBASE_URL;
@@ -56,8 +113,13 @@ function aplicarCorTema(hexColor) {
     r = r < 0 ? 0 : r; g = g < 0 ? 0 : g; b = b < 0 ? 0 : b;
     let hexHover = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
     document.documentElement.style.setProperty('--theme-color-hover', hexHover);
+    
+    // Atualiza os textos de código hexadecimal tanto no Admin quanto no Perfil
     const txtHex = document.getElementById('theme-color-hex');
     if(txtHex) txtHex.innerText = hexColor.toUpperCase();
+    
+    const txtHexPerfil = document.getElementById('profile-theme-color-hex');
+    if(txtHexPerfil) txtHexPerfil.innerText = hexColor.toUpperCase();
 }
 
 function posicionarSetaPelaCor(hexColor) {
@@ -85,16 +147,20 @@ function checkSession() {
             currentUserUid = user.uid;
             
             try {
-                // Remove qualquer barra no final da URL do banco para não duplicar na concatenação
                 const urlBaseBanco = firebaseConfig.databaseURL.replace(/\/$/, "");
-
-                // Busca o perfil do usuário de forma 100% dinâmica baseada no projeto do topo
                 let resPerfil = await fetch(`${urlBaseBanco}/usuarios/${currentUserUid}.json`);
                 let perfil = await resPerfil.json();
                 
-                // Se o perfil não existir (Ex: novo usuário via Google), cria os padrões na hora no projeto atual
+                // Se o perfil não existir (Ex: Novo usuário via Google)
                 if (!perfil) {
+                    let nomeCompleto = user.displayName || "Usuário";
+                    let partesNome = nomeCompleto.split(" ");
+                    let primeiroNome = partesNome[0];
+                    let sobrenome = partesNome.slice(1).join(" ") || "Google";
+
                     perfil = {
+                        nome: primeiroNome,
+                        sobrenome: sobrenome,
                         cor_tema: "#ff0000",
                         tema: "",
                         firebaseUrl: `${urlBaseBanco}/usuarios/${currentUserUid}/midias.json`
@@ -102,24 +168,59 @@ function checkSession() {
                     await salvarPreferenciaNoFirebase(perfil);
                 }
                 
-                // Alimenta os parâmetros operacionais do app (A API Key agora é sempre travada na do topo)
+                // Alimenta os parâmetros operacionais do app
                 CONFIG.FIREBASE_URL = perfil.firebaseUrl;
                 CONFIG.YT_API_KEY = YT_API_KEY_GLOBAL;
                 
-                // Aplica o visual salvo no banco de dados (Sincronização em nuvem)
+                // Aplica o visual salvo no banco de dados
                 aplicarCorTema(perfil.cor_tema || "#ff0000");
                 posicionarSetaPelaCor(perfil.cor_tema || "#ff0000");
                 document.body.className = perfil.tema || "";
                 
+                // EXIBE O NOME ELEGANTE NO TOPO DO SITE
+                if (perfil.nome && perfil.nome !== "Usuário") {
+                    const elBadge = document.getElementById('user-profile-display');
+                    const elTxt = document.getElementById('user-top-name');
+                    if(elBadge && elTxt) {
+                        elTxt.innerText = `Olá, ${perfil.nome}!`;
+                        elBadge.classList.remove('hidden');
+                    }
+                } else {
+                    // AVISO DE NOVIDADE: Clicável para abrir o modal direto
+                    if(!document.getElementById('alert-novidade-perfil')) {
+                        const aviso = document.createElement('div');
+                        aviso.className = 'alert-novidade-box';
+                        aviso.id = 'alert-novidade-perfil';
+                        aviso.style.cursor = 'pointer';
+                        
+                        aviso.onclick = (e) => {
+                            if(e.target.tagName !== 'BUTTON') abrirModalPerfil();
+                        };
+                        aviso.innerHTML = `
+                            <div style="font-weight:bold; margin-bottom:5px;">Novidade no StreamHub! 🎉</div>
+                            <p style="font-size:0.85rem; margin:0 0 10px 0; line-height:1.2rem;">Agora você pode personalizar seu perfil com nome, sobrenome e tema. <strong>Clique aqui para configurar!</strong></p>
+                            <button onclick="event.stopPropagation(); document.getElementById('alert-novidade-perfil').remove()" style="background:var(--theme-color); border:none; color:#fff; padding:4px 10px; border-radius:3px; cursor:pointer; font-size:0.8rem; font-weight:bold;">Fechar</button>
+                        `;
+                        document.body.appendChild(aviso);
+                    }
+                }
+                
             } catch (err) {
                 console.error("Erro ao inicializar perfil seguro:", err);
-                // Fallback de segurança caso a API falhe na inicialização
                 CONFIG.FIREBASE_URL = `${firebaseConfig.databaseURL.replace(/\/$/, "")}/usuarios/${currentUserUid}/midias.json`;
                 CONFIG.YT_API_KEY = YT_API_KEY_GLOBAL;
             }
             
             document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('app-container').classList.remove('hidden')
+                        // Libera ferramentas se logado com a conta mestre administrativa
+            const btnTabUsers = document.getElementById('tab-trigger-users');
+            if (user.email === "admin@admin.com") {
+                btnTabUsers?.classList.remove('hidden');
+            } else {
+                btnTabUsers?.classList.add('hidden');
+            }
+
             initApp();
             return;
         }
@@ -177,6 +278,7 @@ function limparInterfaceLocal() {
         document.getElementById('btn-google-login').innerHTML = '<i class="fab fa-google"></i> Entrar com o Google';
         document.getElementById('btn-google-login').disabled = false;
     }
+    if (document.getElementById('user-profile-display')) document.getElementById('user-profile-display').classList.add('hidden');
 }
 
 async function initApp() { await carregarCanaisDinamicos(); await recarregarDadosDoBanco(); }
@@ -306,7 +408,6 @@ function alternarModoCategoriaCanal(modo) {
         wrapExistente.classList.remove('hidden');
     }
 }
-
 
 function createCard(title, imgSrc, showAddButton = false, isPlaylist = false, clickCallback, realIndex = -1) {
     const card = document.createElement('div'); card.className = 'card';
@@ -446,6 +547,75 @@ async function peekPlaylistContents(playlistId) {
     } catch(e) { alert("Erro playlist."); }
 }
 
+// SALVA AS CONFIGURAÇÕES DE CORES DA PALETA GERAL OU DO PERFIL
+function inicializarSeletorCoresLinear() {
+    const barAdmin = document.getElementById('color-spectrum-bar'); 
+    const selectorAdmin = document.getElementById('color-spectrum-selector');
+    const barPerfil = document.getElementById('profile-color-spectrum-bar');
+    const selectorPerfil = document.getElementById('profile-color-spectrum-selector');
+
+    const coresGradiente = ["#000000", "#ff0000", "#ff00ff", "#0000ff", "#00ffff", "#00ff00", "#ffff00", "#ff0000", "#ffffff"];
+    let isDragging = false;
+
+    function hexToRgb(hex) { let num = parseInt(hex.replace("#",""), 16); return { r: num >> 16, g: (num >> 8) & 0x00FF, b: num & 0x0000FF }; }
+    function rgbToHex(r, g, b) { return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1); }
+
+    function calcularCorPelaPosicao(e, barElement, selectorElement, ehPerfil) {
+        if (!barElement || !selectorElement) return;
+        const rect = barElement.getBoundingClientRect(); 
+        let clientX = e.clientX || (e.touches && e.touches[0].clientX); 
+        let x = clientX - rect.left;
+        
+        if (x < 0) x = 0; 
+        if (x > rect.width) x = rect.width; 
+        let percent = x / rect.width; 
+        selectorElement.style.left = (percent * 100) + '%';
+        
+        let segment = percent * (coresGradiente.length - 1); 
+        let index = Math.floor(segment); 
+        let factor = segment - index;
+        let core1 = coresGradiente[index]; 
+        let cor2 = coresGradiente[index + 1] || coresGradiente[index];
+        let rgb1 = hexToRgb(core1); 
+        let rgb2 = hexToRgb(cor2);
+        
+        let r = Math.round(rgb1.r + factor * (rgb2.r - rgb1.r)); 
+        let g = Math.round(rgb1.g + factor * (rgb2.g - rgb1.g)); 
+        let b = Math.round(rgb1.b + factor * (rgb2.b - rgb1.b));
+        let hexResult = rgbToHex(r, g, b); 
+        
+        if (ehPerfil) {
+            // No perfil, guarda na variável para salvar apenas quando clicar em concluir
+            corPerfilTemporaria = hexResult;
+            const txtHexPerfil = document.getElementById('profile-theme-color-hex');
+            if (txtHexPerfil) txtHexPerfil.innerText = hexResult.toUpperCase();
+        } else {
+            // No Admin, altera direto e já grava em nuvem em tempo real
+            aplicarCorTema(hexResult); 
+            salvarPreferenciaNoFirebase({ cor_tema: hexResult });
+        }
+    }
+
+    // Configuração de Eventos para o Painel Admin original
+    if (barAdmin) {
+        barAdmin.addEventListener('mousedown', (e) => { isDragging = true; calcularCorPelaPosicao(e, barAdmin, selectorAdmin, false); });
+        document.addEventListener('mousemove', (e) => { if (isDragging) calcularCorPelaPosicao(e, barAdmin, selectorAdmin, false); });
+        barAdmin.addEventListener('touchstart', (e) => { isDragging = true; calcularCorPelaPosicao(e, barAdmin, selectorAdmin, false); }, {passive: true});
+        document.addEventListener('touchmove', (e) => { if (isDragging) calcularCorPelaPosicao(e, barAdmin, selectorAdmin, false); }, {passive: true});
+    }
+
+    // Configuração de Eventos Exclusivos para a barra do Perfil de Usuário
+    if (barPerfil) {
+        barPerfil.addEventListener('mousedown', (e) => { isDragging = true; calcularCorPelaPosicao(e, barPerfil, selectorPerfil, true); });
+        document.addEventListener('mousemove', (e) => { if (isDragging) calcularCorPelaPosicao(e, barPerfil, selectorPerfil, true); });
+        barPerfil.addEventListener('touchstart', (e) => { isDragging = true; calcularCorPelaPosicao(e, barPerfil, selectorPerfil, true); }, {passive: true});
+        document.addEventListener('touchmove', (e) => { if (isDragging) calcularCorPelaPosicao(e, barPerfil, selectorPerfil, true); }, {passive: true});
+    }
+
+    document.addEventListener('mouseup', () => isDragging = false);
+    document.addEventListener('touchend', () => isDragging = false);
+}
+
 function openAdminWithTrack(item) {
     if (document.getElementById('admin-modal')) document.getElementById('admin-modal').classList.remove('hidden'); switchTabs('add-tab', 'tab-trigger-add');
     document.getElementById('manual-media-url').value = item.type === 'playlist' ? `https://www.youtube.com/playlist?list=${item.youtubeId}` : `https://www.youtube.com/embed/${item.youtubeId}`;
@@ -487,7 +657,6 @@ function playTrack(index) {
     else { 
         if (univPlayerEl) { 
             univPlayerEl.classList.remove('hidden'); 
-            
             let urlTratada = linkOriginal;
             
             if (urlTratada.includes("archive.org/details/")) {
@@ -508,7 +677,6 @@ function playTrack(index) {
                 const separador = urlTratada.includes("?") ? "&" : "?";
                 urlTratada = `${urlTratada}${separador}playsinline=1&enablejsapi=1&origin=${window.location.origin}`;
             }
-            
             univPlayerEl.src = urlTratada; 
         } 
     }
@@ -520,7 +688,6 @@ function extractYoutubeId(url) {
     if (match && match[2].length === 11) return match[2]; if (url.trim().length === 11 && !url.includes('/') && !url.includes('.')) return url.trim(); return null;
 }
 
-// --- MOTOR DE VOLUME ---
 function aplicarVolume() {
     const slider = document.getElementById('player-volume-slider');
     const btnMute = document.getElementById('btn-mute-toggle');
@@ -726,30 +893,6 @@ function downloadJSON(obj, filename) {
     document.body.appendChild(a); a.click(); a.remove();
 }
 
-function inicializarSeletorCoresLinear() {
-    const bar = document.getElementById('color-spectrum-bar'); const selector = document.getElementById('color-spectrum-selector'); if (!bar || !selector) return;
-    let isDragging = false; const coresGradiente = ["#000000", "#ff0000", "#ff00ff", "#0000ff", "#00ffff", "#00ff00", "#ffff00", "#ff0000", "#ffffff"];
-    function calcularCorPelaPosicao(e) {
-        const rect = bar.getBoundingClientRect(); let clientX = e.clientX || (e.touches && e.touches[0].clientX); let x = clientX - rect.left;
-        if (x < 0) x = 0; if (x > rect.width) x = rect.width; let percent = x / rect.width; selector.style.left = (percent * 100) + '%';
-        let segment = percent * (coresGradiente.length - 1); let index = Math.floor(segment); let factor = segment - index;
-        let core1 = coresGradiente[index]; let cor2 = coresGradiente[index + 1] || coresGradiente[index];
-        let rgb1 = hexToRgb(core1); let rgb2 = hexToRgb(cor2);
-        let r = Math.round(rgb1.r + factor * (rgb2.r - rgb1.r)); let g = Math.round(rgb1.g + factor * (rgb2.g - rgb1.g)); let b = Math.round(rgb1.b + factor * (rgb2.b - rgb1.b));
-        let hexResult = rgbToHex(r, g, b); 
-        aplicarCorTema(hexResult); 
-        
-        // Sincroniza a nova cor escolhida na nuvem em tempo real
-        salvarPreferenciaNoFirebase({ cor_tema: hexResult });
-    }
-    function hexToRgb(hex) { let num = parseInt(hex.replace("#",""), 16); return { r: num >> 16, g: (num >> 8) & 0x00FF, b: num & 0x0000FF }; }
-    function rgbToHex(r, g, b) { return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1); }
-    bar.addEventListener('mousedown', (e) => { isDragging = true; calcularCorPelaPosicao(e); });
-    document.addEventListener('mousemove', (e) => { if (isDragging) calcularCorPelaPosicao(e); }); document.addEventListener('mouseup', () => isDragging = false);
-    bar.addEventListener('touchstart', (e) => { isDragging = true; calcularCorPelaPosicao(e); }, {passive: true});
-    document.addEventListener('touchmove', (e) => { if (isDragging) calcularCorPelaPosicao(e); }, {passive: true}); document.addEventListener('touchend', () => isDragging = false);
-}
-
 function handleToggleSidebar() {
     const sidebar = document.getElementById('sidebar'); if (!sidebar) return;
     if (window.innerWidth <= 768) { sidebar.classList.toggle('open'); sidebar.classList.remove('collapsed'); }
@@ -764,6 +907,112 @@ function switchTabs(targetTabId, activeTriggerBtnId) {
     if (triggerBtn) triggerBtn.classList.add('active'); 
     if (targetTab) targetTab.classList.remove('hidden');
 }
+
+// Gera a lista de solicitações de exclusão na aba do Admin Mestre (Versão de Diagnóstico Forçado)
+async function renderizarListaUsuariosPedidosExclusao() {
+    const container = document.getElementById('admin-users-request-list');
+    if (!container) return;
+    
+    // Força um estado inicial visível para sabermos que a função foi chamada
+    container.innerHTML = "<p style='color:var(--text-gray); font-size:0.9rem;'><i class='fas fa-spinner fa-spin'></i> Carregando dados do nó /usuarios...</p>";
+    
+    try {
+        let urlRaizLimpa = firebaseConfig.databaseURL.replace(/\/$/, "");
+        let res = await fetch(`${urlRaizLimpa}/usuarios.json`);
+        
+        if (!res.ok) {
+            container.innerHTML = `<p style='color:#e74c3c; padding:10px; font-weight:bold;'>❌ Erro de HTTP no Firebase: ${res.status}</p>`;
+            return;
+        }
+        
+        let data = await res.json();
+        
+        // Se o banco retornar totalmente vazio na raiz
+        if (!data) {
+            container.innerHTML = "<p style='color:var(--text-gray); padding:10px; font-size:0.9rem;'>Nenhum registro encontrado no nó /usuarios. O banco está vazio. ✨</p>";
+            return;
+        }
+
+        // Caso o Firebase retorne um array com itens nulos (comum se deletar IDs sequenciais)
+        let usuariosObjeto = {};
+        if (Array.isArray(data)) {
+            data.forEach((item, index) => { if (item) usuariosObjeto[index] = item; });
+        } else {
+            usuariosObjeto = data;
+        }
+        
+        container.innerHTML = ""; // Limpa o carregando
+        let encontrouNenhum = true;
+        
+        Object.keys(usuariosObjeto).forEach(uid => {
+            try {
+                const userPerfil = usuariosObjeto[uid];
+                
+                // Pula se o perfil estiver corrompido ou nulo no banco
+                if (!userPerfil || typeof userPerfil !== 'object') return;
+                
+                // Captura se a propriedade existir de qualquer forma (booleano ou texto)
+                const pediuExclusao = userPerfil.solicitou_exclusao === true || 
+                                     userPerfil.solicitou_exclusao === "true" ||
+                                     userPerfil.solicitouExclusao === true || 
+                                     userPerfil.solicitouExclusao === "true";
+                
+                if (pediuExclusao) {
+                    encontrouNenhum = false;
+                    
+                    const row = document.createElement('div');
+                    row.className = "crud-item";
+                    row.style.background = "rgba(231, 76, 60, 0.1)";
+                    row.style.borderLeft = "4px solid #e74c3c";
+                    row.style.padding = "10px";
+                    row.style.marginBottom = "5px";
+                    row.style.display = "flex";
+                    row.style.justifyContent = "space-between";
+                    row.style.alignItems = "center";
+                    row.style.width = "100%";
+                    
+                    row.innerHTML = `
+                        <div style="display:flex; flex-direction:column; gap:2px; text-align:left;">
+                            <span style="color:#fff; font-weight:bold;">${userPerfil.nome || 'Usuário Sem Nome'} ${userPerfil.sobrenome || ''}</span>
+                            <span style="font-size:0.72rem; color:var(--text-gray); font-family:monospace; user-select:all;"><i class="fas fa-fingerprint"></i> UID: ${uid}</span>
+                        </div>
+                        <button class="crud-btn btn-del" onclick="processarExclusaoDefinitivaPeloMaster('${uid}')" style="padding:6px 12px; font-size:0.8rem; flex-shrink:0; margin-left:10px;"><i class="fas fa-user-minus"></i> Limpar</button>
+                    `;
+                    container.appendChild(row);
+                }
+            } catch (innerError) {
+                console.error("Erro ao processar linha de usuário individual:", innerError);
+            }
+        });
+        
+        if (encontrouNenhum) {
+            container.innerHTML = "<p style='color:var(--text-gray); padding:10px; font-size:0.9rem;'>Nenhuma solicitação pendente no momento! Seu Firebase está limpo. ✨</p>";
+        }
+        
+    } catch(err) {
+        console.error("Erro crítico na renderização:", err);
+        container.innerHTML = `<p style='color:#e74c3c; padding:10px; font-weight:bold;'>❌ Falha Crítica no Script: ${err.message}</p>`;
+    }
+}
+
+
+
+
+
+// O Admin mestre limpa a pasta de dados do usuário rejeitado no banco
+async function processarExclusaoDefinitivaPeloMaster(uidUsuarioAlvo) {
+    if (!confirm("Atenção Admin: Deseja apagar permanentemente todas as mídias e preferências deste usuário do banco? (Lembre-se de deletar a credencial dele no painel Firebase Auth)")) return;
+    
+    try {
+        const urlBaseBanco = firebaseConfig.databaseURL.replace(/\/$/, "");
+        await fetch(`${urlBaseBanco}/usuarios/${uidUsuarioAlvo}.json`, { method: "DELETE" });
+        alert("Dados do Realtime Database removidos com sucesso!");
+        renderizarListaUsuariosPedidosExclusao();
+    } catch(e) {
+        alert("Erro técnico ao limpar nó do usuário.");
+    }
+}
+
 
 function setupEventListeners() {
     console.log("Configurando Delegação de Eventos...");
@@ -791,6 +1040,28 @@ function setupEventListeners() {
                 });
         }
 
+                // 1. GATILHO PARA ABRIR/FECHAR O MENU DA ENGRENAGEM NO MOBILE
+        if (e.target.closest('#btn-trigger-dropdown-mobile')) {
+            e.stopPropagation();
+            document.getElementById('dropdown-menu-mobile')?.classList.toggle('hidden');
+        } else {
+            // Se clicar em qualquer outro lugar da tela, fecha o menu flutuante automaticamente
+            document.getElementById('dropdown-menu-mobile')?.classList.add('hidden');
+        }
+
+        // 2. AÇÃO DO BOTÃO ADMIN DE DENTRO DA ENGRENAGEM MOBILE
+        if (e.target.closest('#btn-open-admin-mobile')) {
+            document.getElementById('admin-modal')?.classList.remove('hidden'); 
+            switchTabs('add-tab', 'tab-trigger-add'); 
+            renderCrudManager();
+        }
+
+        // 3. AÇÃO DO BOTÃO SAIR DE DENTRO DA ENGRENAGEM MOBILE
+        if (e.target.closest('#btn-logout-mobile')) {
+            handleLogoutActions();
+        }
+
+        
         if (e.target.closest('#btn-open-admin')) { 
             document.getElementById('admin-modal')?.classList.remove('hidden'); 
             switchTabs('add-tab', 'tab-trigger-add'); renderCrudManager(); 
@@ -800,14 +1071,15 @@ function setupEventListeners() {
         if (e.target.closest('#tab-trigger-add')) switchTabs('add-tab', 'tab-trigger-add');
         if (e.target.closest('#tab-trigger-channel')) switchTabs('channel-tab', 'tab-trigger-channel');
         if (e.target.closest('#tab-trigger-manage')) { switchTabs('manage-tab', 'tab-trigger-manage'); renderCrudManager(); }
+        if (e.target.closest('#tab-trigger-users')) { switchTabs('users-tab', 'tab-trigger-users'); renderizarListaUsuariosPedidosExclusao(); }
 
         if (e.target.closest('#btn-save-media')) saveMediaToDatabase(e);
         if (e.target.closest('#btn-submit-edit-media')) saveAdvancedEditChanges(e);
         if (e.target.closest('#btn-cancel-edit-media') || e.target.closest('#btn-cancel-edit-media-2')) {
             document.getElementById('edit-media-modal')?.classList.add('hidden');
         }
-                if (e.target.closest('#btn-save-channel-link')) {
-            // Descobre qual modo de categoria está selecionado (existente ou nova)
+        
+        if (e.target.closest('#btn-save-channel-link')) {
             const modoSelecionado = document.querySelector('input[name="cat-mode-channel"]:checked')?.value || 'existente';
             let catDestino = "";
 
@@ -836,12 +1108,10 @@ function setupEventListeners() {
                 
                 alert(`Canal vinculado com sucesso na categoria "${catDestino}"!`);
                 
-                // Limpa e resgata os controles para o estado original
                 document.getElementById("channel-preview").style.display = "none"; 
                 document.getElementById('search-channel-input').value = "";
                 if(document.getElementById('channel-target-category-new')) document.getElementById('channel-target-category-new').value = "";
                 
-                // Volta o rádio para o modo "existente" padrão
                 const radExistente = document.querySelector('input[name="cat-mode-channel"][value="existente"]');
                 if(radExistente) { radExistente.checked = true; alternarModoCategoriaCanal('existente'); }
 
@@ -852,7 +1122,21 @@ function setupEventListeners() {
             }
         }
 
+                // USUÁRIO COMUM SOLICITA EXCLUSÃO DE CONTA
+        if (e.target.closest('#btn-request-delete-account')) {
+            e.preventDefault();
+            if (!confirm("Tem certeza absoluta de que deseja solicitar a exclusão da sua conta? Seu acervo e preferências serão agendados para eliminação pelo administrador.")) return;
+            
+            try {
+                await salvarPreferenciaNoFirebase({ solicitou_exclusao: true });
+                alert("Sua solicitação de exclusão foi enviada com sucesso! Você pode fechar o site ou deslogar.");
+                fecharModalPerfil();
+            } catch(err) {
+                alert("Falha ao registrar pedido.");
+            }
+        }
 
+        
         if (e.target.closest('#btn-fetch-manual')) {
             const url = document.getElementById('manual-media-url').value.trim(); if(!url) return alert("Insira uma URL.");
             const btn = e.target.closest('#btn-fetch-manual'); btn.innerText = "Buscando..."; const vId = extractYoutubeId(url);
@@ -869,12 +1153,22 @@ function setupEventListeners() {
             const val = document.getElementById('json-input-field')?.value.trim(); if(!val) return alert("Cole o código JSON");
             try { let p = JSON.parse(val); await processarInjecaoDeDadosAcumulativa(Array.isArray(p) ? p : Object.values(p)); document.getElementById('json-input-field').value = ""; } catch(err) { alert("JSON inválido."); }
         }
+        
+        // Clique do botão de reset do tema Admin clássico
         if (e.target.closest('#btn-reset-theme')) {
             if(currentUserUid) {
                 let padrao = { cor_tema: "#ff0000" };
                 aplicarCorTema("#ff0000"); posicionarSetaPelaCor("#ff0000");
                 salvarPreferenciaNoFirebase(padrao);
             }
+        }
+
+        // --- CORREÇÃO: Clique do botão de reset de tema DENTRO DO PERFIL ---
+        if (e.target.closest('#profile-btn-reset-theme')) {
+            corPerfilTemporaria = "#ff0000";
+            aplicarCorTema("#ff0000");
+            const selectorPerfil = document.getElementById('profile-color-spectrum-selector');
+            if(selectorPerfil) selectorPerfil.style.left = "12%";
         }
 
         if (e.target.closest('#btn-next-track')) { if(currentTrackIndex + 1 < currentPlaylist.length) playTrack(currentTrackIndex + 1); }
@@ -890,6 +1184,7 @@ function setupEventListeners() {
             aplicarVolume();
         }
 
+        // Cliques dos botões flutuantes de temas originais (Switch do canto direito)
         const themeBtn = e.target.closest('[id^="theme-switch-"]');
         if (themeBtn) {
             const tema = themeBtn.id.replace('theme-switch-', '');
@@ -897,8 +1192,73 @@ function setupEventListeners() {
             document.body.className = className;
             salvarPreferenciaNoFirebase({ tema: className });
         }
+
+        // --- CORREÇÃO: Cliques nos seletores de temas DENTRO DO MODAL PERFIL ---
+        const profileThemeBtn = e.target.closest('.profile-theme-btn');
+        if (profileThemeBtn) {
+            const temaSelecionado = profileThemeBtn.getAttribute('data-theme');
+            const className = temaSelecionado === 'youtube' ? "" : `theme-${temaSelecionado}`;
+            document.body.className = className;
+            // Grava o tema imediatamente na tela para feedback visual e prepara para o payload
+            profileThemeBtn.parentElement.querySelectorAll('.profile-theme-btn').forEach(btn => btn.classList.remove('active'));
+            profileThemeBtn.classList.add('active');
+        }
     });
 
+    // SALVAR ALTERAÇÕES DE NOME, SOBRENOME, COR E TEMA DO PERFIL COMPLETO
+    document.addEventListener('click', async (e) => {
+        if (e.target.closest('#btn-save-profile-changes')) {
+            e.preventDefault();
+            
+            const novoNome = document.getElementById('profile-edit-name').value.trim();
+            const novoSobrenome = document.getElementById('profile-edit-lastname').value.trim();
+            
+            // Verifica qual o botão de tema ativo dentro do modal de perfil
+            const btnTemaAtivo = document.querySelector('.profile-theme-btn.active');
+            let temaFinal = document.body.className; // Pega o estado atual do body como fallback
+            
+            if (btnTemaAtivo) {
+                const dataTheme = btnTemaAtivo.getAttribute('data-theme');
+                temaFinal = dataTheme === 'youtube' ? "" : `theme-${dataTheme}`;
+            }
+            
+            if (!novoNome || !novoSobrenome) {
+                return alert("Os campos Nome e Sobrenome não podem ficar vazios!");
+            }
+            
+            const btnSaveProf = document.getElementById('btn-save-profile-changes');
+            btnSaveProf.innerText = "Salvando..."; btnSaveProf.disabled = true;
+            
+            try {
+                // Monta o payload de atualização robusto (Unifica Nome, Sobrenome, Cor e Tema de Fundo)
+                const dadosAtualizados = {
+                    nome: novoNome,
+                    sobrenome: novoSobrenome,
+                    cor_tema: corPerfilTemporaria || "#ff0000",
+                    tema: temaFinal
+                };
+                
+                // Salva tudo de uma vez só na nuvem
+                await salvarPreferenciaNoFirebase(dadosAtualizados);
+                
+                // Atualiza em tempo real as variáveis ativas na tela
+                aplicarCorTema(dadosAtualizados.cor_tema);
+                document.body.className = dadosAtualizados.tema;
+                
+                const elTxt = document.getElementById('user-top-name');
+                if (elTxt) elTxt.innerText = `Olá, ${novoNome}!`;
+                
+                alert("Perfil e preferências salvos com sucesso!");
+                fecharModalPerfil();
+                
+            } catch (err) {
+                alert("Erro ao salvar alterações do perfil: " + err.message);
+            } finally {
+                btnSaveProf.innerText = "Salvar Alterações"; btnSaveProf.disabled = false;
+            }
+        }
+    });
+    
     const tratarBuscaGlobal = (e) => {
         if (e.key === 'Enter' || e.type === 'change') {
             const termo = e.target.value.trim();
@@ -951,6 +1311,62 @@ function setupEventListeners() {
             const btnMute = document.getElementById('btn-mute-toggle');
             if (btnMute) btnMute.setAttribute('data-muted', 'false'); 
             aplicarVolume();
+        }
+    });
+
+    // PROCESSAMENTO DO CADASTRO COMPLETO DE USUÁRIOS
+    document.addEventListener('click', async (e) => {
+        if (e.target.closest('#btn-register-submit')) {
+            e.preventDefault();
+            
+            const nome = document.getElementById('register-name').value.trim();
+            const sobrenome = document.getElementById('register-lastname').value.trim();
+            const email = document.getElementById('register-email').value.trim().toLowerCase();
+            const senha = document.getElementById('register-pass').value.trim();
+            const senhaConfirm = document.getElementById('register-pass-confirm').value.trim();
+            
+            if(!nome || !sobrenome || !email || !senha) {
+                return alert("Por favor, preencha todos os campos do cadastro!");
+            }
+            if(senha.length < 6) {
+                return alert("A senha precisa ter no mínimo 6 caracteres!");
+            }
+            if(senha !== senhaConfirm) {
+                return alert("As senhas digitadas não batem! Verifique a confirmação.");
+            }
+            
+            const btnReg = document.getElementById('btn-register-submit');
+            btnReg.innerText = "Criando conta..."; btnReg.disabled = true;
+            
+            try {
+                const cred = await firebase.auth().createUserWithEmailAndPassword(email, senha);
+                const novoUid = cred.user.uid;
+                const urlBaseBanco = firebaseConfig.databaseURL.replace(/\/$/, "");
+                
+                const novoPerfil = {
+                    nome: nome,
+                    sobrenome: sobrenome,
+                    cor_tema: "#ff0000",
+                    tema: "",
+                    firebaseUrl: `${urlBaseBanco}/usuarios/${novoUid}/midias.json`
+                };
+                
+                await fetch(`${urlBaseBanco}/usuarios/${novoUid}.json`, {
+                    method: "PATCH",
+                    body: JSON.stringify(novoPerfil),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                alert(`Conta criada com absoluto sucesso, ${nome}! Seja bem-vindo.`);
+                
+                document.getElementById('form-cadastro-fluxo').reset();
+                alternarAbasLogin('login');
+                
+            } catch(error) {
+                alert("Erro ao realizar cadastro: " + error.message);
+            } finally {
+                btnReg.innerText = "Criar Minha Conta"; btnReg.disabled = false;
+            }
         }
     });
 
