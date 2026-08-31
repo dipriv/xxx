@@ -2,13 +2,13 @@
 // CONFIGURAÇÃO INICIAL E CREDENCIAIS DO APP
 // ==========================================
 const firebaseConfig = {
-    apiKey: "AIzaSyCB_oJUAtVE8cSotjRT6Hiv7TAJzzeAPiw", 
-    authDomain: "dipriv-47697.firebaseapp.com",
-    databaseURL: "https://dipriv-47697-default-rtdb.firebaseio.com",
-    projectId: "dipriv-47697",
-    storageBucket: "dipriv-47697.firebasestorage.app",
-    messagingSenderId: "883733352905",
-    appId: "1:883733352905:web:109c683493875c1bc39818"
+    apiKey: "AIzaSyA3obnKmTrF4zH6pdV8ogqZ88r7uACy3BI", 
+    authDomain: "workin--music.firebaseapp.com",
+    databaseURL: "https://workin--music-default-rtdb.firebaseio.com",
+    projectId: "workin--music",
+    storageBucket: "workin--music.firebasestorage.app",
+    messagingSenderId: "588256543173",
+    appId: "1:588256543173:web:eddf01b30628df90ca8bac"
 };
 
 // CHAVE DE API GLOBAL DO YOUTUBE (PROTEGIDA POR RESTRIÇÃO DE DOMÍNIO HTTP)
@@ -163,7 +163,7 @@ function alternarAbasLogin(modo) {
         titulo.innerText = "Recuperar Senha";
     } else {
         formLogin.classList.remove('hidden');
-        titulo.innerText = "Hot Prive";
+        titulo.innerText = "StreamHub";
     }
 }
 
@@ -267,7 +267,7 @@ function checkSession() {
                             if(e.target.tagName !== 'BUTTON') abrirModalPerfil();
                         };
                         aviso.innerHTML = `
-                            <div style="font-weight:bold; margin-bottom:5px;">Novidade no Hot Prive! 🎉</div>
+                            <div style="font-weight:bold; margin-bottom:5px;">Novidade no StreamHub! 🎉</div>
                             <p style="font-size:0.85rem; margin:0 0 10px 0; line-height:1.2rem;">Agora você pode personalizar seu perfil com nome, sobrenome e tema. <strong>Clique aqui para configurar!</strong></p>
                             <button onclick="event.stopPropagation(); document.getElementById('alert-novidade-perfil').remove()" style="background:var(--theme-color); border:none; color:#fff; padding:4px 10px; border-radius:3px; cursor:pointer; font-size:0.8rem; font-weight:bold;">Fechar</button>
                         `;
@@ -449,14 +449,14 @@ function renderMosaic() {
             currentPlaylist = database.filter(item => item.categoria === selectedCategory && item.subcategoria === selectedSubcategory);
             currentPlaylist.forEach((track, index) => {
                 const realIndex = database.findIndex(dbItem => dbItem.link === track.link && dbItem.título === track.título);
-                grid.appendChild(createCard(track.título, track.capa, false, false, () => { playTrack(index); }, realIndex));
+                grid.appendChild(createCard(track.título, track.capa, false, false, () => { playTrack(index); }, realIndex, track));
             });
         }
     }
     else if (currentView === 'search_results') {
         if (bcSrc) bcSrc.classList.remove('hidden');
         lastYtSearchResults.forEach(item => {
-            const isPlaylist = item.type === 'playlist'; const card = createCard(item.title, item.thumb, true, isPlaylist, null, -1);
+            const isPlaylist = item.type === 'playlist'; const card = createCard(item.title, item.thumb, true, isPlaylist, null, -1, { título: item.title, capa: item.thumb, link: isPlaylist ? `https://www.youtube.com/playlist?list=${item.youtubeId}` : `https://www.youtube.com/embed/${item.youtubeId}` });
             if (card.querySelector('.add-music-badge')) { card.querySelector('.add-music-badge').onclick = (e) => { e.preventDefault(); e.stopPropagation(); openAdminWithTrack(item); }; }
             const btnGroup = document.createElement('div'); btnGroup.className = 'search-btn-group';
             const btnPlay = document.createElement('button'); btnPlay.style.background = '#2980b9'; btnPlay.innerHTML = `<i class="fas fa-play"></i> Assistir`;
@@ -524,7 +524,7 @@ function renderMosaic() {
             currentPlaylist = lastLocalSearchResults;
             lastLocalSearchResults.forEach((track, index) => {
                 const realIndex = database.findIndex(dbItem => dbItem.link === track.link && dbItem.título === track.título);
-                grid.appendChild(createCard(track.título, track.capa, false, false, () => { playTrack(index); }, realIndex));
+                grid.appendChild(createCard(track.título, track.capa, false, false, () => { playTrack(index); }, realIndex, track));
             });
         }
     }
@@ -544,9 +544,10 @@ function alternarModoCategoriaCanal(modo) {
     }
 }
 
-function createCard(title, imgSrc, showAddButton = false, isPlaylist = false, clickCallback, realIndex = -1) {
+function createCard(title, imgSrc, showAddButton = false, isPlaylist = false, clickCallback, realIndex = -1, shareInfo = null) {
     const card = document.createElement('div'); card.className = 'card';
     let htmlContent = `<img src="${imgSrc || 'https://placehold.co/160x90?text=Sem+Capa'}"><h4>${title}</h4>`;
+    if (shareInfo && shareInfo.link) htmlContent += `<div class="share-badge" title="Compartilhar"><i class="fas fa-share-nodes"></i></div>`;
     if(isPlaylist) htmlContent += `<span class="media-type-badge"><i class="fas fa-photo-film"></i> Playlist</span>`;
     if(showAddButton) htmlContent += `<button class="add-music-badge"><i class="fas fa-plus"></i> ${isPlaylist ? "Add Playlist" : "Adicionar"}</button>`;
     if(realIndex >= 0) htmlContent += `<div class="quick-edit-badge" title="Editar"><i class="fas fa-cog"></i></div>`;
@@ -554,6 +555,13 @@ function createCard(title, imgSrc, showAddButton = false, isPlaylist = false, cl
     if(clickCallback) card.addEventListener('click', clickCallback);
     if(realIndex >= 0 && card.querySelector('.quick-edit-badge')) {
         card.querySelector('.quick-edit-badge').addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openAdvancedEditModal(realIndex); });
+    }
+    const badgeShare = card.querySelector('.share-badge');
+    if (badgeShare && shareInfo) {
+        badgeShare.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            compartilharMidia(shareInfo);
+        });
     }
     return card;
 }
@@ -572,7 +580,7 @@ async function buscarVideosRecentesDoCanal(playlistId) {
             }));
             if (grid) { 
                 grid.innerHTML = ''; 
-                currentPlaylist.forEach((track, index) => { grid.appendChild(createCard(track.título, track.capa, false, false, () => { playTrack(index); }, -1)); }); 
+                currentPlaylist.forEach((track, index) => { grid.appendChild(createCard(track.título, track.capa, false, false, () => { playTrack(index); }, -1, track)); }); 
             }
         }
     } catch (e) { if (grid) grid.innerHTML = '<h3>Erro ao carregar feeds do canal.</h3>'; }
@@ -1160,8 +1168,19 @@ function setupEventListeners() {
         if (e.target.closest('#btn-trigger-dropdown-mobile')) {
             e.stopPropagation();
             document.getElementById('dropdown-menu-mobile')?.classList.toggle('hidden');
-        } else {
+        } else if (!e.target.closest('#dropdown-menu-mobile')) {
             document.getElementById('dropdown-menu-mobile')?.classList.add('hidden');
+        }
+        // Mantem o cabecalho acima de tudo enquanto o menu da engrenagem esta aberto
+        (function syncDropdownStacking() {
+            const menu = document.getElementById('dropdown-menu-mobile');
+            const header = document.querySelector('.app-header');
+            if (!menu || !header) return;
+            header.classList.toggle('dropdown-open', !menu.classList.contains('hidden'));
+        })();
+
+        if (e.target.closest('#btn-toggle-sidebar-mobile')) {
+            handleToggleSidebar();
         }
 
         if (e.target.closest('#btn-open-admin-mobile')) {
@@ -1183,6 +1202,7 @@ function setupEventListeners() {
         if (e.target.closest('#tab-trigger-add')) switchTabs('add-tab', 'tab-trigger-add');
         if (e.target.closest('#tab-trigger-channel')) switchTabs('channel-tab', 'tab-trigger-channel');
         if (e.target.closest('#tab-trigger-manage')) { switchTabs('manage-tab', 'tab-trigger-manage'); renderCrudManager(); }
+        if (e.target.closest('#tab-trigger-custom')) switchTabs('custom-tab', 'tab-trigger-custom');
         if (e.target.closest('#tab-trigger-users')) { switchTabs('users-tab', 'tab-trigger-users'); renderizarListaUsuariosPedidosExclusao(); }
 
         if (e.target.closest('#btn-save-media')) saveMediaToDatabase(e);
@@ -1258,7 +1278,7 @@ function setupEventListeners() {
             } catch(err) {} finally { btn.innerText = "Capturar Dados"; }
         }
 
-        if (e.target.closest('#btn-export-all-json')) { if (database.length > 0) downloadJSON(database, "backup_completo_Hot Prive"); else alert("Banco vazio!"); }
+        if (e.target.closest('#btn-export-all-json')) { if (database.length > 0) downloadJSON(database, "backup_completo_streamhub"); else alert("Banco vazio!"); }
         if (e.target.closest('#btn-submit-json-code')) {
             const val = document.getElementById('json-input-field')?.value.trim(); if(!val) return alert("Cole o código JSON");
             try { let p = JSON.parse(val); await processarInjecaoDeDadosAcumulativa(Array.isArray(p) ? p : Object.values(p)); document.getElementById('json-input-field').value = ""; } catch(err) { alert("JSON inválido."); }
@@ -1298,6 +1318,16 @@ function setupEventListeners() {
             const className = tema === 'youtube' ? "" : `theme-${tema}`;
             document.body.className = className;
             salvarPreferenciaNoFirebase({ tema: className });
+        }
+
+        const adminThemeBtn = e.target.closest('.admin-theme-btn');
+        if (adminThemeBtn) {
+            const temaAdmin = adminThemeBtn.getAttribute('data-theme');
+            const classNameAdmin = temaAdmin === 'youtube' ? "" : `theme-${temaAdmin}`;
+            document.body.className = classNameAdmin;
+            adminThemeBtn.parentElement.querySelectorAll('.admin-theme-btn').forEach(btn => btn.classList.remove('active'));
+            adminThemeBtn.classList.add('active');
+            salvarPreferenciaNoFirebase({ tema: classNameAdmin });
         }
 
         const profileThemeBtn = e.target.closest('.profile-theme-btn');
@@ -1798,6 +1828,18 @@ function aplicarAlturaComentarios(px) {
     return altura;
 }
 
+// Layout dos comentários: ao lado (desktop) ou abaixo (mobile)
+function ehLayoutDesktopComentarios() {
+    return window.innerWidth > 768;
+}
+
+let larguraPlayerAntesDosComentarios = null;
+
+function limparEstilosDePosicaoDoPlayer(player) {
+    if (!player) return;
+    ["left", "top", "width", "height", "bottom", "right"].forEach(p => player.style.removeProperty(p));
+}
+
 // Ao abrir os comentários, o player ganha o espaço extra (não encolhe o vídeo)
 function ajustarAlturaDoPlayerComComentarios(abrir, alturaComentarios) {
     const player = document.getElementById("player-container");
@@ -1815,24 +1857,62 @@ function ajustarAlturaDoPlayerComComentarios(abrir, alturaComentarios) {
     }
 }
 
+// No desktop os comentários ficam colados à direita: o player só ganha largura
+function ajustarLarguraDoPlayerComComentarios(abrir) {
+    const player = document.getElementById("player-container");
+    if (!player || !player.classList.contains("player-free")) return;
+    if (abrir) {
+        const rect = player.getBoundingClientRect();
+        if (larguraPlayerAntesDosComentarios === null) larguraPlayerAntesDosComentarios = rect.width;
+        const extra = Math.min(400, Math.round(window.innerWidth * 0.3));
+        const desejada = Math.min(larguraPlayerAntesDosComentarios + extra, Math.round(window.innerWidth * 0.96));
+        player.style.setProperty("width", desejada + "px", "important");
+        const esquerda = Math.max(0, Math.min(rect.left, window.innerWidth - desejada));
+        player.style.setProperty("left", esquerda + "px", "important");
+    } else if (larguraPlayerAntesDosComentarios !== null) {
+        player.style.setProperty("width", larguraPlayerAntesDosComentarios + "px", "important");
+        larguraPlayerAntesDosComentarios = null;
+    }
+}
+
 function alternarPainelComentarios(forcarAbrir) {
     const painel = document.getElementById("player-comments");
     const player = document.getElementById("player-container");
     if (!painel) return;
     const abrir = typeof forcarAbrir === "boolean" ? forcarAbrir : painel.classList.contains("hidden");
+    const desktop = ehLayoutDesktopComentarios();
     painel.classList.toggle("hidden", !abrir);
-    if (player) player.classList.toggle("with-comments", abrir);
+    if (player) {
+        player.classList.toggle("with-comments", abrir);
+        player.classList.toggle("comments-side", abrir && desktop);
+    }
     const btn = document.getElementById("btn-toggle-comments");
     if (btn) btn.style.color = abrir ? "var(--theme-color)" : "";
     if (abrir) {
-        const altura = aplicarAlturaComentarios(alturaPadraoComentarios());
-        ajustarAlturaDoPlayerComComentarios(true, altura);
+        if (desktop) {
+            // Painel colado à direita: altura acompanha o player
+            painel.style.removeProperty("height");
+            painel.style.removeProperty("--comments-height");
+            ajustarLarguraDoPlayerComComentarios(true);
+        } else {
+            const altura = aplicarAlturaComentarios(alturaPadraoComentarios());
+            ajustarAlturaDoPlayerComComentarios(true, altura);
+        }
         carregarComentariosDoVideo(videoIdEmExibicao);
         montarCaixaDeComentario();
     } else {
-        ajustarAlturaDoPlayerComComentarios(false, 0);
+        // Ao fechar, o player volta ao tamanho e à posição originais
+        alturaPlayerAntesDosComentarios = null;
+        larguraPlayerAntesDosComentarios = null;
+        painel.style.removeProperty("height");
+        painel.style.removeProperty("--comments-height");
+        if (player) {
+            player.classList.remove("player-free", "comments-side");
+            limparEstilosDePosicaoDoPlayer(player);
+        }
     }
 }
+
 
 // Alça de redimensionamento do painel de comentários (mouse e toque)
 function configurarRedimensionamentoComentarios() {
@@ -1843,6 +1923,7 @@ function configurarRedimensionamentoComentarios() {
     const ponto = (ev) => (ev.touches && ev.touches[0] ? ev.touches[0] : ev);
 
     const iniciar = (ev) => {
+        if (ehLayoutDesktopComentarios()) return; // no desktop o painel fica colado à direita
         arrastando = true;
         startY = ponto(ev).clientY;
         baseH = painel.getBoundingClientRect().height;
@@ -2289,7 +2370,7 @@ function preencherFormularioEstiloMaster() {
     const hex = document.getElementById("master-color-hex");
     if (hex) hex.innerText = cor.toUpperCase();
     const nome = document.getElementById("master-site-name");
-    if (nome) nome.value = c.siteNome || "Hot Prive";
+    if (nome) nome.value = c.siteNome || "StreamHub";
 
     document.querySelectorAll(".master-theme-btn").forEach(b => {
         const val = b.getAttribute("data-theme") === "youtube" ? "" : `theme-${b.getAttribute("data-theme")}`;
@@ -2391,7 +2472,7 @@ document.addEventListener("DOMContentLoaded", () => {
             salvarConfigGlobal({
                 temaPadrao: tema,
                 corPadrao: document.getElementById("master-color-input").value,
-                siteNome: document.getElementById("master-site-name").value.trim() || "Hot Prive"
+                siteNome: document.getElementById("master-site-name").value.trim() || "StreamHub"
             });
         }
 
@@ -2451,3 +2532,757 @@ document.addEventListener("DOMContentLoaded", () => {
         alternarBotoesAdminMaster();
     });
 });
+
+// ==========================================
+// ESPELHAMENTO DE VÍDEOS (CHROMECAST)
+// Módulo independente: usa o Google Cast SDK (CAF).
+// - Arquivos diretos (mp4/mkv/webm/mp3/hls) -> Default Media Receiver
+// - Vídeos e playlists do YouTube -> app oficial do YouTube na TV
+// - Demais fontes (iframes/Drive/Archive) -> orienta o espelhamento de aba
+// ==========================================
+const CAST_YT_RECEIVER_ID = "233637DE";
+const CAST_YT_NAMESPACE = "urn:x-cast:com.google.youtube.mdx";
+
+let castApiPronta = false;
+let castContext = null;
+let castRemotePlayer = null;
+let castRemoteController = null;
+let castModoAtual = null;      // 'media' | 'youtube'
+let castReceiverDesejado = null;
+let castEstaTransmitindo = false;
+let castIndiceEmTransmissao = -1;
+
+let castTentativas = 0;
+let castTimerBusca = null;
+
+// A API do Chromecast pode ficar pronta ANTES ou DEPOIS deste arquivo carregar.
+// Por isso registramos o callback e também fazemos uma verificação periódica.
+window['__onGCastApiAvailable'] = function (disponivel) {
+    window.__castApiDisponivel = !!disponivel;
+    if (!disponivel) return;
+    try { inicializarCast(); } catch (e) { console.warn("Cast: falha ao iniciar", e); }
+};
+
+function castSdkCarregado() {
+    return typeof cast !== "undefined" && !!cast.framework &&
+           typeof chrome !== "undefined" && !!chrome.cast && !!chrome.cast.isAvailable;
+}
+
+function garantirSdkCast() {
+    if (castSdkCarregado()) { inicializarCast(); return; }
+    const jaTem = Array.from(document.scripts).some(sc => (sc.src || "").includes("cast_sender.js"));
+    if (!jaTem) {
+        const sc = document.createElement("script");
+        sc.src = "https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1";
+        sc.async = true;
+        document.head.appendChild(sc);
+    }
+    if (castTimerBusca) return;
+    castTimerBusca = setInterval(() => {
+        castTentativas++;
+        if (castSdkCarregado()) { inicializarCast(); }
+        if (castApiPronta || castTentativas > 60) { clearInterval(castTimerBusca); castTimerBusca = null; }
+    }, 500);
+}
+
+function inicializarCast() {
+    if (castApiPronta || !castSdkCarregado()) return;
+    castApiPronta = true;
+    castContext = cast.framework.CastContext.getInstance();
+    castDefinirReceiver(chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID);
+
+    castContext.addEventListener(
+        cast.framework.CastContextEventType.CAST_STATE_CHANGED,
+        () => atualizarInterfaceCast()
+    );
+    castContext.addEventListener(
+        cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
+        (evento) => {
+            const S = cast.framework.SessionState;
+            if (evento.sessionState === S.SESSION_STARTED || evento.sessionState === S.SESSION_RESUMED) {
+                castEstaTransmitindo = true;
+                if (castModoAtual) transmitirFaixaAtual(true);
+            }
+            if (evento.sessionState === S.SESSION_ENDED) {
+                castEstaTransmitindo = false;
+                castModoAtual = null;
+                castIndiceEmTransmissao = -1;
+                retomarReproducaoLocal();
+            }
+            atualizarInterfaceCast();
+        }
+    );
+
+    castRemotePlayer = new cast.framework.RemotePlayer();
+    castRemoteController = new cast.framework.RemotePlayerController(castRemotePlayer);
+    castRemoteController.addEventListener(
+        cast.framework.RemotePlayerEventType.PLAYER_STATE_CHANGED,
+        () => {
+            if (!castEstaTransmitindo) return;
+            if (castRemotePlayer.playerState === chrome.cast.media.PlayerState.IDLE &&
+                castIndiceEmTransmissao === currentTrackIndex &&
+                currentTrackIndex + 1 < currentPlaylist.length) {
+                const media = castContext.getCurrentSession()?.getMediaSession();
+                if (media && media.idleReason === chrome.cast.media.IdleReason.FINISHED) {
+                    playTrack(currentTrackIndex + 1);
+                }
+            }
+        }
+    );
+
+    // Reavalia periodicamente: a descoberta na rede local costuma demorar alguns segundos
+    setInterval(() => { try { atualizarInterfaceCast(); } catch (e) {} }, 3000);
+    atualizarInterfaceCast();
+}
+
+function castDefinirReceiver(appId) {
+    if (!castContext || castReceiverDesejado === appId) return;
+    castReceiverDesejado = appId;
+    castContext.setOptions({
+        receiverApplicationId: appId,
+        autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
+        androidReceiverCompatible: true
+    });
+}
+
+function castLinkDaFaixa(track) {
+    let link = ((track && track.link) || "").trim();
+    // Converte links de visualização do Google Drive em link direto de mídia
+    const drive = link.match(/drive\.google\.com\/file\/d\/([^/?#]+)/);
+    if (drive) link = `https://drive.google.com/uc?export=download&id=${drive[1]}`;
+    // Converte página do Archive.org em arquivo direto quando possível
+    if (link.includes("archive.org/details/")) link = link.replace("/details/", "/download/");
+    return link;
+}
+
+function castTipoDaFonte(link) {
+    const url = (link || "").toLowerCase();
+    const vId = (typeof extractYoutubeId === "function") ? extractYoutubeId(link) : null;
+    const plId = (typeof extractPlaylistId === "function") ? extractPlaylistId(link) : null;
+    if (vId || plId || url.includes("youtube.com") || url.includes("youtu.be")) return "youtube";
+    if (/\.(mp4|m4v|webm|ogv|mov|mkv|mp3|m4a|aac|ogg|m3u8|mpd|flv|avi|wav|opus)(\?|$)/.test(url)) return "media";
+    if (url.includes("raw.githubusercontent") || url.includes("docs.google.com/uc?export=download")) return "media";
+    if (url.includes("drive.google.com/file/d/")) return "media";
+    if (/^https?:\/\//.test(url)) return "media"; // tentativa universal: qualquer link é enviado ao receptor
+    return "desconhecido";
+}
+
+function castMimeDoArquivo(link) {
+    const url = (link || "").toLowerCase();
+    if (url.includes(".m3u8")) return "application/x-mpegurl";
+    if (url.includes(".mpd")) return "application/dash+xml";
+    if (url.includes(".webm")) return "video/webm";
+    if (url.includes(".mkv")) return "video/x-matroska";
+    if (url.includes(".mp3")) return "audio/mpeg";
+    if (url.includes(".m4a") || url.includes(".aac")) return "audio/mp4";
+    if (url.includes(".ogg") || url.includes(".ogv")) return "video/ogg";
+    return "video/mp4";
+}
+
+function castAvisar(mensagem) {
+    const anterior = document.querySelector(".cast-toast");
+    if (anterior) anterior.remove();
+    const caixa = document.createElement("div");
+    caixa.className = "cast-toast";
+    caixa.innerHTML = mensagem;
+    document.body.appendChild(caixa);
+    setTimeout(() => { try { caixa.remove(); } catch (e) {} }, 7000);
+}
+
+function pausarReproducaoLocal() {
+    try { if (ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo(); } catch (e) {}
+    const raw = document.getElementById("raw-player");
+    if (raw) { try { raw.pause(); } catch (e) {} }
+}
+
+function retomarReproducaoLocal() {
+    const raw = document.getElementById("raw-player");
+    if (raw && raw.src && !raw.classList.contains("hidden")) { try { raw.play(); } catch (e) {} }
+}
+
+async function espelharPorRemotePlayback() {
+    // Compatibilidade universal: Safari/iOS (AirPlay) e navegadores com Remote Playback API
+    const raw = document.getElementById("raw-player");
+    if (raw && typeof raw.webkitShowPlaybackTargetPicker === "function" && raw.src) {
+        try { raw.webkitShowPlaybackTargetPicker(); return true; } catch (e) {}
+    }
+    if (raw && raw.remote && typeof raw.remote.prompt === "function" && raw.src) {
+        try { await raw.remote.prompt(); return true; } catch (e) {}
+    }
+    return false;
+}
+
+async function alternarTransmissao() {
+    if (castEstaTransmitindo) { encerrarTransmissao(); return; }
+
+    if (!castApiPronta || !castContext) {
+        garantirSdkCast();
+        // Aguarda um instante: o SDK pode ainda estar carregando
+        await new Promise(r => setTimeout(r, 900));
+    }
+    if (!castApiPronta || !castContext) {
+        if (await espelharPorRemotePlayback()) return;
+        castAvisar("<b>Espelhamento indisponível neste navegador</b><br>Use Chrome, Edge ou Android (via HTTPS) para Chromecast, ou Safari/iOS para AirPlay.<br>Alternativa: menu do navegador (⋮) &rarr; <i>Transmitir</i> &rarr; <i>Transmitir aba</i>.");
+        return;
+    }
+    if (castContext.getCastState() === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
+        // NÃO bloqueamos mais: a descoberta é assíncrona e o diálogo do navegador
+        // costuma encontrar aparelhos que ainda não foram anunciados ao site.
+        castAvisar("<b>Procurando dispositivos na rede...</b><br>Se a lista aparecer vazia, confirme que o celular/PC e a TV estão na mesma rede Wi-Fi (sem isolamento de clientes/VPN).");
+    }
+    if (!currentPlaylist.length || currentTrackIndex < 0) {
+        castAvisar("<b>Escolha um vídeo primeiro</b><br>Abra uma mídia no player e depois toque em transmitir.");
+        return;
+    }
+    transmitirFaixaAtual(false);
+}
+
+async function transmitirFaixaAtual(sessaoJaAtiva) {
+    const track = currentPlaylist[currentTrackIndex];
+    if (!track) return;
+    const link = castLinkDaFaixa(track);
+    const tipo = castTipoDaFonte(link);
+
+    if (tipo === "desconhecido") {
+        if (await espelharPorRemotePlayback()) return;
+        castAvisar("<b>Fonte exibida por player externo</b><br>Use o menu do navegador (⋮) &rarr; <i>Transmitir</i> &rarr; <i>Fontes: Transmitir aba</i> para espelhar esta mídia.");
+        return;
+    }
+
+    const appDesejado = tipo === "youtube" ? CAST_YT_RECEIVER_ID : chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID;
+    const sessaoAtual = castContext.getCurrentSession();
+    const precisaTrocarApp = sessaoAtual && castReceiverDesejado !== appDesejado;
+
+    if (precisaTrocarApp) {
+        try { await castContext.endCurrentSession(true); } catch (e) {}
+    }
+
+    castModoAtual = tipo;
+    castDefinirReceiver(appDesejado);
+
+    if (!castContext.getCurrentSession()) {
+        try {
+            await castContext.requestSession();
+            return; // o evento SESSION_STARTED chama esta função novamente
+        } catch (e) {
+            castModoAtual = null;
+            return;
+        }
+    }
+
+    pausarReproducaoLocal();
+    if (tipo === "youtube") await enviarYoutubeParaTV(link);
+    else await enviarArquivoParaTV(track, link);
+
+    castEstaTransmitindo = true;
+    castIndiceEmTransmissao = currentTrackIndex;
+    atualizarInterfaceCast();
+}
+
+async function enviarYoutubeParaTV(link) {
+    const sessao = castContext.getCurrentSession();
+    if (!sessao) return;
+    const videoId = (typeof extractYoutubeId === "function") ? extractYoutubeId(link) : null;
+    const listId = (typeof extractPlaylistId === "function") ? extractPlaylistId(link) : null;
+    const dados = { currentTime: 0 };
+    if (videoId) dados.videoId = videoId;
+    if (listId) dados.listId = listId;
+    if (!videoId && !listId) {
+        castAvisar("<b>Não foi possível identificar o vídeo do YouTube.</b>");
+        return;
+    }
+    try {
+        await sessao.sendMessage(CAST_YT_NAMESPACE, { type: "flingVideo", data: dados });
+    } catch (e) {
+        castAvisar("<b>A TV recusou a transmissão do YouTube</b><br>Use o menu do Chrome (⋮) &rarr; <i>Transmitir</i> para espelhar a aba.");
+    }
+}
+
+async function enviarArquivoParaTV(track, link) {
+    const sessao = castContext.getCurrentSession();
+    if (!sessao) return;
+    const info = new chrome.cast.media.MediaInfo(link, castMimeDoArquivo(link));
+    info.metadata = new chrome.cast.media.GenericMediaMetadata();
+    info.metadata.title = (track && (track.título || track.titulo)) || "StreamHub";
+    if (track && track.capa) info.metadata.images = [new chrome.cast.Image(track.capa)];
+    const pedido = new chrome.cast.media.LoadRequest(info);
+    pedido.autoplay = true;
+    try {
+        await sessao.loadMedia(pedido);
+    } catch (e) {
+        const ok = await espelharPorRemotePlayback();
+        if (!ok) castAvisar("<b>Não foi possível enviar esta mídia</b><br>O formato pode não ser suportado pela TV. Use o menu do navegador (⋮) &rarr; <i>Transmitir</i> &rarr; <i>Transmitir aba</i> para espelhar mesmo assim.");
+    }
+}
+
+function encerrarTransmissao() {
+    if (!castContext) return;
+    try { castContext.endCurrentSession(true); } catch (e) {}
+    castEstaTransmitindo = false;
+    castModoAtual = null;
+    castIndiceEmTransmissao = -1;
+    atualizarInterfaceCast();
+    retomarReproducaoLocal();
+}
+
+function garantirBarraDeStatusCast() {
+    if (document.getElementById("cast-status-bar")) return document.getElementById("cast-status-bar");
+    const container = document.getElementById("player-container");
+    const header = container ? container.querySelector(".player-header") : null;
+    if (!container || !header) return null;
+    const barra = document.createElement("div");
+    barra.id = "cast-status-bar";
+    barra.innerHTML =
+        '<span class="cast-status-text"><i class="fab fa-chromecast"></i> <span id="cast-status-label">Transmitindo</span></span>' +
+        '<span class="cast-status-actions">' +
+        '<button type="button" id="btn-cast-play-pause"><i class="fas fa-pause"></i> Pausar</button>' +
+        '<button type="button" id="btn-cast-stop"><i class="fas fa-stop"></i> Parar</button>' +
+        '</span>';
+    header.insertAdjacentElement("afterend", barra);
+    return barra;
+}
+
+function atualizarInterfaceCast() {
+    const botao = document.getElementById("btn-cast");
+    if (botao) {
+        let disponivel = false;
+        try {
+            disponivel = !!(castApiPronta && castContext &&
+                castContext.getCastState() !== cast.framework.CastState.NO_DEVICES_AVAILABLE);
+        } catch (e) { disponivel = false; }
+        const raw = document.getElementById("raw-player");
+        if (!disponivel && raw && (typeof raw.webkitShowPlaybackTargetPicker === "function" || (raw.remote && raw.remote.prompt))) disponivel = true;
+        botao.classList.toggle("cast-available", !!disponivel);
+        botao.classList.toggle("cast-connected", !!castEstaTransmitindo);
+        botao.title = castEstaTransmitindo ? "Parar transmissão para a TV" : "Transmitir para a TV (Chromecast)";
+    }
+    const barra = garantirBarraDeStatusCast();
+    if (!barra) return;
+    barra.classList.toggle("active", !!castEstaTransmitindo);
+    const rotulo = document.getElementById("cast-status-label");
+    if (rotulo) {
+        const nomeDispositivo = (castContext && castContext.getCurrentSession) ?
+            (castContext.getCurrentSession()?.getCastDevice()?.friendlyName || "TV") : "TV";
+        rotulo.innerText = `Transmitindo em ${nomeDispositivo}`;
+    }
+    const btnPP = document.getElementById("btn-cast-play-pause");
+    if (btnPP) {
+        const pausado = castRemotePlayer && castRemotePlayer.isPaused;
+        btnPP.innerHTML = pausado ? '<i class="fas fa-play"></i> Retomar' : '<i class="fas fa-pause"></i> Pausar';
+    }
+}
+
+document.addEventListener("click", (e) => {
+    if (e.target.closest("#btn-cast")) { alternarTransmissao(); return; }
+    if (e.target.closest("#btn-cast-stop")) { encerrarTransmissao(); return; }
+    if (e.target.closest("#btn-cast-play-pause")) {
+        if (castRemoteController) {
+            try { castRemoteController.playOrPause(); } catch (err) {}
+            setTimeout(atualizarInterfaceCast, 250);
+        }
+    }
+});
+
+// Troca de faixa e volume continuam funcionando enquanto transmite
+(function integrarCastComPlayer() {
+    if (typeof playTrack === "function") {
+        const originalPlay = playTrack;
+        playTrack = function (index) {
+            originalPlay(index);
+            if (castEstaTransmitindo) {
+                setTimeout(() => { try { transmitirFaixaAtual(true); } catch (e) {} }, 200);
+            }
+        };
+    }
+    if (typeof aplicarVolume === "function") {
+        const originalVolume = aplicarVolume;
+        aplicarVolume = function () {
+            originalVolume();
+            if (!castEstaTransmitindo || !castContext) return;
+            const slider = document.getElementById("player-volume-slider");
+            const btnMute = document.getElementById("btn-mute-toggle");
+            const sessao = castContext.getCurrentSession();
+            if (!slider || !sessao) return;
+            const mudo = btnMute && btnMute.getAttribute("data-muted") === "true";
+            try {
+                sessao.setVolume(Math.max(0, Math.min(1, parseInt(slider.value) / 100)));
+                sessao.setMute(!!mudo);
+            } catch (e) {}
+        };
+    }
+})();
+
+document.addEventListener("DOMContentLoaded", () => { garantirBarraDeStatusCast(); atualizarInterfaceCast(); });
+
+document.addEventListener("DOMContentLoaded", () => { try { garantirSdkCast(); } catch (e) {} });
+try { garantirSdkCast(); } catch (e) {}
+
+// ==========================================
+// COMPARTILHAMENTO DE MÍDIAS
+// Gera um link do próprio site apontando para a mídia e usa o
+// compartilhamento nativo do aparelho (ou copia o link).
+// ==========================================
+function linkDeCompartilhamento(info) {
+    const base = window.location.origin + window.location.pathname;
+    const params = new URLSearchParams();
+    params.set("midia", (info && info.link) || "");
+    const titulo = (info && (info.título || info.titulo)) || "";
+    if (titulo) params.set("t", titulo);
+    const capa = (info && info.capa) || "";
+    if (capa) params.set("capa", capa);
+    return `${base}?${params.toString()}`;
+}
+
+async function compartilharMidia(info) {
+    if (!info || !info.link) { castAvisar("<b>Nada para compartilhar</b>"); return; }
+    abrirMenuCompartilhamento(info);
+}
+
+// Compartilhamento direto pelo recurso nativo do aparelho (ou cópia do link)
+async function compartilharLinkNativo(url, titulo, texto) {
+    if (navigator.share) {
+        try { await navigator.share({ title: titulo, text: texto, url }); return; } catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    try {
+        await navigator.clipboard.writeText(url);
+        castAvisar("<b>Link copiado!</b><br>Cole onde quiser para compartilhar esta mídia.");
+        return;
+    } catch (e) {}
+    const campo = document.createElement("textarea");
+    campo.value = url; campo.style.position = "fixed"; campo.style.opacity = "0";
+    document.body.appendChild(campo); campo.select();
+    try { document.execCommand("copy"); castAvisar("<b>Link copiado!</b>"); }
+    catch (e) { castAvisar(`<b>Copie o link abaixo:</b><br><small>${url}</small>`); }
+    campo.remove();
+}
+
+function compartilharMidiaAtual() {
+    const track = (typeof currentPlaylist !== "undefined" && currentPlaylist[currentTrackIndex]) || null;
+    if (!track) { castAvisar("<b>Abra uma mídia no player</b> antes de compartilhar."); return; }
+    compartilharMidia(track);
+}
+
+// ==========================================
+// MENU DE OPÇÕES DE COMPARTILHAMENTO
+// Link do StreamHub, link padrão do YouTube, WhatsApp,
+// Facebook, Telegram, X, e-mail, cópia e menu do aparelho
+// ==========================================
+async function copiarTextoParaAreaDeTransferencia(texto) {
+    try { await navigator.clipboard.writeText(texto); return true; } catch (e) {}
+    const campo = document.createElement("textarea");
+    campo.value = texto; campo.style.position = "fixed"; campo.style.opacity = "0";
+    document.body.appendChild(campo); campo.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    campo.remove();
+    return ok;
+}
+
+function linkPadraoDoYoutube(info) {
+    const id = typeof extractYoutubeId === "function" ? extractYoutubeId(((info && info.link) || "").trim()) : null;
+    return id ? `https://www.youtube.com/watch?v=${id}` : null;
+}
+
+function fecharMenuCompartilhamento() {
+    document.getElementById("share-sheet")?.remove();
+}
+
+function abrirMenuCompartilhamento(info) {
+    if (!info || !info.link) { castAvisar("<b>Nada para compartilhar</b>"); return; }
+    fecharMenuCompartilhamento();
+
+    const titulo = (info.título || info.titulo || "StreamHub");
+    const linkSite = linkDeCompartilhamento(info);
+    const linkYt = linkPadraoDoYoutube(info);
+    const texto = `Assista "${titulo}" no StreamHub`;
+
+    const overlay = document.createElement("div");
+    overlay.id = "share-sheet";
+    overlay.className = "share-sheet-overlay";
+    overlay.innerHTML = `
+        <div class="share-sheet-box" role="dialog" aria-label="Compartilhar mídia">
+            <div class="share-sheet-head">
+                <span><i class="fas fa-share-nodes"></i> Compartilhar</span>
+                <button type="button" class="btn-player-action" data-share="fechar" title="Fechar"><i class="fas fa-times"></i></button>
+            </div>
+            <p class="share-sheet-title">${titulo}</p>
+            <div class="share-sheet-grid">
+                <button type="button" class="share-opt" data-share="site"><i class="fas fa-link"></i><span>Link do StreamHub</span></button>
+                ${linkYt ? '<button type="button" class="share-opt" data-share="youtube"><i class="fab fa-youtube"></i><span>Link do YouTube</span></button>' : ""}
+                <button type="button" class="share-opt" data-share="whatsapp"><i class="fab fa-whatsapp"></i><span>WhatsApp</span></button>
+                <button type="button" class="share-opt" data-share="facebook"><i class="fab fa-facebook"></i><span>Facebook</span></button>
+                <button type="button" class="share-opt" data-share="telegram"><i class="fab fa-telegram"></i><span>Telegram</span></button>
+                <button type="button" class="share-opt" data-share="twitter"><i class="fab fa-x-twitter"></i><span>X (Twitter)</span></button>
+                <button type="button" class="share-opt" data-share="email"><i class="fas fa-envelope"></i><span>E-mail</span></button>
+                <button type="button" class="share-opt" data-share="nativo"><i class="fas fa-mobile-screen"></i><span>Outros apps do aparelho</span></button>
+            </div>
+            <div class="share-sheet-link-row">
+                <input type="text" id="share-sheet-link" readonly value="${linkSite}">
+                <button type="button" class="btn-send-comment" data-share="copiar"><i class="fas fa-copy"></i> Copiar</button>
+            </div>
+            ${linkYt ? `<div class="share-sheet-link-row">
+                <input type="text" id="share-sheet-link-yt" readonly value="${linkYt}">
+                <button type="button" class="btn-send-comment" data-share="copiar-yt"><i class="fas fa-copy"></i> Copiar</button>
+            </div>` : ""}
+        </div>`;
+
+    const escolhido = () => {
+        const seletor = overlay.querySelector(".share-opt.selected");
+        return seletor && seletor.dataset.share === "youtube" && linkYt ? linkYt : linkSite;
+    };
+
+    const abrirJanela = (url) => window.open(url, "_blank", "noopener,noreferrer");
+
+    overlay.addEventListener("click", async (e) => {
+        if (e.target === overlay) { fecharMenuCompartilhamento(); return; }
+        const botao = e.target.closest("[data-share]");
+        if (!botao) return;
+        const acao = botao.dataset.share;
+        const url = escolhido();
+
+        if (acao === "fechar") { fecharMenuCompartilhamento(); return; }
+        if (acao === "site" || acao === "youtube") {
+            overlay.querySelectorAll(".share-opt").forEach(b => b.classList.remove("selected"));
+            botao.classList.add("selected");
+            const alvo = acao === "youtube" ? linkYt : linkSite;
+            castAvisar(acao === "youtube"
+                ? "<b>Link do YouTube selecionado</b><br>Escolha agora por onde compartilhar."
+                : "<b>Link do StreamHub selecionado</b><br>Escolha agora por onde compartilhar.");
+            const campo = document.getElementById("share-sheet-link");
+            if (campo) campo.value = alvo;
+            return;
+        }
+        if (acao === "whatsapp") { abrirJanela(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto + " " + url)}`); }
+        else if (acao === "facebook") { abrirJanela(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`); }
+        else if (acao === "telegram") { abrirJanela(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(texto)}`); }
+        else if (acao === "twitter") { abrirJanela(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(texto)}`); }
+        else if (acao === "email") { window.location.href = `mailto:?subject=${encodeURIComponent(titulo)}&body=${encodeURIComponent(texto + "\n\n" + url)}`; }
+        else if (acao === "nativo") { await compartilharLinkNativo(url, titulo, texto); }
+        else if (acao === "copiar") {
+            const ok = await copiarTextoParaAreaDeTransferencia(document.getElementById("share-sheet-link")?.value || linkSite);
+            castAvisar(ok ? "<b>Link copiado!</b>" : "<b>Copie o link manualmente</b>");
+        } else if (acao === "copiar-yt") {
+            const ok = await copiarTextoParaAreaDeTransferencia(linkYt);
+            castAvisar(ok ? "<b>Link do YouTube copiado!</b>" : "<b>Copie o link manualmente</b>");
+        }
+        fecharMenuCompartilhamento();
+    });
+
+    document.body.appendChild(overlay);
+    overlay.querySelector('[data-share="site"]')?.classList.add("selected");
+}
+
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") fecharMenuCompartilhamento(); });
+
+// Abre automaticamente a mídia recebida por link compartilhado
+function abrirMidiaCompartilhada() {
+    const params = new URLSearchParams(window.location.search);
+    const link = params.get("midia");
+    if (!link) return;
+    const titulo = params.get("t") || "Mídia compartilhada";
+    const capa = params.get("capa") || "";
+    let tentativas = 0;
+    const timer = setInterval(() => {
+        tentativas++;
+        const app = document.getElementById("app-container");
+        const pronto = app && !app.classList.contains("hidden") && typeof playTrack === "function";
+        if (pronto) {
+            clearInterval(timer);
+            currentPlaylist = [{ título: titulo, link: link, capa: capa }];
+            currentTrackIndex = 0;
+            try { playTrack(0); } catch (e) {}
+        }
+        if (tentativas > 120) clearInterval(timer);
+    }, 500);
+}
+document.addEventListener("DOMContentLoaded", abrirMidiaCompartilhada);
+
+// ==========================================
+// AÇÕES DO PLAYER: COMPARTILHAR + MENU RETRÁTIL (MOBILE)
+// ==========================================
+function garantirBotoesDoPlayer() {
+    const grupo = document.querySelector("#player-container .player-controls-group");
+    if (!grupo) return;
+
+    if (!document.getElementById("btn-share-media")) {
+        const btn = document.createElement("button");
+        btn.id = "btn-share-media";
+        btn.className = "btn-player-action";
+        btn.type = "button";
+        btn.title = "Compartilhar esta mídia";
+        btn.innerHTML = '<i class="fas fa-share-nodes"></i>';
+        const alvo = document.getElementById("btn-cast");
+        if (alvo) alvo.insertAdjacentElement("beforebegin", btn);
+        else grupo.appendChild(btn);
+    }
+
+    if (!document.getElementById("btn-player-more")) {
+        const mais = document.createElement("button");
+        mais.id = "btn-player-more";
+        mais.className = "btn-player-action btn-player-more";
+        mais.type = "button";
+        mais.title = "Mais opções";
+        mais.innerHTML = '<i class="fas fa-ellipsis-vertical"></i>';
+        grupo.insertAdjacentElement("beforebegin", mais);
+    }
+
+    // O botão de fechar fica sempre visível, fora do menu retrátil
+    const fechar = document.getElementById("btn-close-player");
+    if (fechar && fechar.parentElement === grupo) grupo.insertAdjacentElement("afterend", fechar);
+
+    ajustarModoCompactoPlayer();
+}
+
+function ajustarModoCompactoPlayer() {
+    const header = document.querySelector("#player-container .player-header");
+    const grupo = document.querySelector("#player-container .player-controls-group");
+    if (!header || !grupo) return;
+    const compacto = window.innerWidth <= 768 || (document.getElementById("player-container")?.offsetWidth || 9999) < 520;
+    header.classList.toggle("compact-mode", compacto);
+    if (!compacto) grupo.classList.remove("menu-open");
+}
+
+document.addEventListener("DOMContentLoaded", garantirBotoesDoPlayer);
+window.addEventListener("resize", ajustarModoCompactoPlayer);
+
+document.addEventListener("click", (e) => {
+    if (e.target.closest("#btn-share-media")) { e.preventDefault(); compartilharMidiaAtual(); return; }
+    if (e.target.closest("#btn-player-more")) {
+        e.preventDefault(); e.stopPropagation();
+        document.querySelector("#player-container .player-controls-group")?.classList.toggle("menu-open");
+        return;
+    }
+    if (!e.target.closest(".player-controls-group")) {
+        document.querySelector("#player-container .player-controls-group")?.classList.remove("menu-open");
+    }
+});
+
+// ==========================================
+// MOSTRAR / OCULTAR SENHA NO LOGIN
+// ==========================================
+function ativarBotoesDeSenha() {
+    document.querySelectorAll('input[type="password"], input[data-senha-visivel]').forEach((campo) => {
+        const grupo = campo.parentElement;
+        if (!grupo || grupo.querySelector(".toggle-senha")) return;
+        grupo.classList.add("has-toggle-senha");
+
+        const botao = document.createElement("button");
+        botao.type = "button";
+        botao.className = "toggle-senha";
+        botao.tabIndex = -1;
+        botao.setAttribute("data-visivel", "0");
+        botao.setAttribute("aria-label", "Mostrar senha");
+        botao.title = "Mostrar senha";
+        botao.innerHTML = '<i class="fas fa-eye-slash"></i>';
+
+        const alternar = (e) => {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            const visivel = campo.getAttribute("type") === "text";
+            const novoVisivel = !visivel;
+            campo.setAttribute("type", novoVisivel ? "text" : "password");
+            campo.setAttribute("data-senha-visivel", novoVisivel ? "1" : "0");
+            botao.setAttribute("data-visivel", novoVisivel ? "1" : "0");
+            // Recria o ícone para a animação de olho reiniciar sempre
+            botao.innerHTML = novoVisivel ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+            botao.title = novoVisivel ? "Ocultar senha" : "Mostrar senha";
+            botao.setAttribute("aria-label", botao.title);
+        };
+
+        // Pointerdown garante resposta imediata no desktop e no mobile
+        botao.addEventListener("pointerdown", alternar);
+        botao.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); });
+        botao.addEventListener("touchend", (e) => { e.preventDefault(); });
+
+        grupo.appendChild(botao);
+    });
+}
+document.addEventListener("DOMContentLoaded", ativarBotoesDeSenha);
+setTimeout(ativarBotoesDeSenha, 1500);
+try {
+    new MutationObserver(() => ativarBotoesDeSenha()).observe(document.documentElement, { childList: true, subtree: true });
+} catch (e) {}
+
+// ==========================================
+// MOBILE: RECOLHER MENUS APÓS ESCOLHER UMA OPÇÃO
+// ==========================================
+document.addEventListener("click", (e) => {
+    if (window.innerWidth > 768) return;
+
+    // Menu lateral retrátil: fecha ao escolher uma subcategoria/mídia
+    const sidebar = document.getElementById("sidebar");
+    if (sidebar && sidebar.classList.contains("open") && e.target.closest("#sidebar")) {
+        const itemAcao = e.target.closest("#sidebar-tree li");
+        const ehPastaCategoria = !!e.target.closest(".category-toggle");
+        const ehBusca = !!e.target.closest(".sidebar-search");
+        if (itemAcao && !ehPastaCategoria && !ehBusca && !itemAcao.querySelector("ul.tree-sub")) {
+            sidebar.classList.remove("open");
+        }
+    }
+
+    // Menu de opções (engrenagem) fecha após clicar em qualquer item
+    if (e.target.closest(".dropdown-item-btn")) {
+        document.getElementById("dropdown-menu-mobile")?.classList.add("hidden");
+    }
+
+    // Menu extra do player fecha após escolher uma ação
+    if (e.target.closest(".player-controls-group .btn-player-action")) {
+        document.querySelector("#player-container .player-controls-group")?.classList.remove("menu-open");
+    }
+}, true);
+
+// ==========================================
+// MOBILE: FECHAR O MENU LATERAL AO CLICAR FORA
+// ==========================================
+(function () {
+    function obterBackdrop() {
+        let bd = document.getElementById("sidebar-backdrop");
+        if (!bd) {
+            bd = document.createElement("div");
+            bd.id = "sidebar-backdrop";
+            bd.className = "sidebar-backdrop";
+            document.body.appendChild(bd);
+            bd.addEventListener("click", fecharSidebarMobile);
+        }
+        return bd;
+    }
+
+    function fecharSidebarMobile() {
+        document.getElementById("sidebar")?.classList.remove("open");
+        atualizarBackdrop();
+    }
+
+    function atualizarBackdrop() {
+        const sidebar = document.getElementById("sidebar");
+        const aberto = !!sidebar && sidebar.classList.contains("open") && window.innerWidth <= 768;
+        obterBackdrop().classList.toggle("visible", aberto);
+    }
+
+    // Clique/toque fora do menu lateral fecha o menu
+    document.addEventListener("pointerdown", (e) => {
+        if (window.innerWidth > 768) return;
+        const sidebar = document.getElementById("sidebar");
+        if (!sidebar || !sidebar.classList.contains("open")) return;
+        if (e.target.closest("#sidebar")) return;
+        // Não fecha ao usar os próprios botões que abrem/fecham o menu
+        if (e.target.closest("#toggle-sidebar, #btn-toggle-sidebar-mobile")) return;
+        fecharSidebarMobile();
+    }, true);
+
+    // Mantém o fundo escuro sincronizado com o estado do menu
+    document.addEventListener("click", () => setTimeout(atualizarBackdrop, 0), true);
+    window.addEventListener("resize", atualizarBackdrop);
+    document.addEventListener("DOMContentLoaded", () => {
+        atualizarBackdrop();
+        const sidebar = document.getElementById("sidebar");
+        if (sidebar) {
+            try {
+                new MutationObserver(atualizarBackdrop).observe(sidebar, { attributes: true, attributeFilter: ["class"] });
+            } catch (e) {}
+        }
+    });
+
+    // Tecla ESC também fecha
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") fecharSidebarMobile(); });
+
+    window.fecharSidebarMobile = fecharSidebarMobile;
+})();
