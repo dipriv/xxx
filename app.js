@@ -79,7 +79,8 @@ let lastLocalSubResults = [];
 // ==========================================
 // ORDENACAO: CATEGORIAS, SUBCATEGORIAS E MIDIAS
 // ==========================================
-let ordemAtual = 'az'; // padrao: ordem alfabetica (A -> Z)
+let ordemAtual = 'catalogo'; // padrao das MIDIAS: ordem de catalogacao
+let ordemAtualNomes = 'az'; // padrao de CATEGORIAS/SUBCATEGORIAS: ordem alfabetica (A -> Z)
 let duracoesCache = {};
 let buscandoDuracoes = false;
 
@@ -89,8 +90,8 @@ function comparadorTexto(a, b) {
 
 function ordenarNomes(lista) {
     const copia = [...lista];
-    if (ordemAtual === 'az') return copia.sort(comparadorTexto);
-    if (ordemAtual === 'za') return copia.sort((a, b) => comparadorTexto(b, a));
+    if (ordemAtualNomes === 'az') return copia.sort(comparadorTexto);
+    if (ordemAtualNomes === 'za') return copia.sort((a, b) => comparadorTexto(b, a));
     return copia;
 }
 
@@ -187,7 +188,9 @@ function formatarDuracao(seg) {
 }
 
 function definirOrdenacao(valor) {
-    ordemAtual = valor || 'az';
+    ordemAtual = valor || 'catalogo';
+    // Duração não se aplica a nomes: categorias/subcategorias caem para a ordem de catalogação
+    ordemAtualNomes = (valor === 'dur-asc' || valor === 'dur-desc') ? 'catalogo' : (valor || 'catalogo');
     renderMosaic();
     // O filtro escolhido tambem reordena o menu lateral de categorias/subcategorias
     try { renderSidebar(); } catch (e) {}
@@ -202,7 +205,6 @@ function atualizarBarraOrdenacao() {
     if (rotulo) rotulo.innerText = currentView === 'categories' ? 'categorias' : (currentView === 'subcategories' ? 'subcategorias' : 'mídias');
     if (currentView === 'search_results') { barra.classList.add('hidden'); return; }
     barra.classList.remove('hidden');
-    if (!ehMidias && (ordemAtual === 'dur-asc' || ordemAtual === 'dur-desc')) ordemAtual = 'catalogo';
     const opcoes = [
         ['catalogo', 'Ordem de catalogação'],
         ['az', 'Título (A → Z) (padrão)'],
@@ -213,7 +215,7 @@ function atualizarBarraOrdenacao() {
         opcoes.push(['dur-desc', 'Duração (maior → menor)']);
     }
     select.innerHTML = opcoes.map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
-    select.value = ordemAtual;
+    select.value = ehMidias ? ordemAtual : ordemAtualNomes;
 }
 
 // ==========================================
@@ -3708,7 +3710,7 @@ document.addEventListener("click", (e) => {
         const f = faixaAtual();
         return (f && (f["título"] || f.titulo)) ||
             document.getElementById("current-track-title")?.innerText ||
-            "Hot Prive";
+            "Hot Priveb";
     }
 
     function capaAtual() {
@@ -4387,7 +4389,7 @@ document.addEventListener("click", (e) => {
     window.addEventListener("pagehide", () => { desligarAudioSilencioso(); });
 
     // Expõe para uso externo, sem alterar nada mais do app
-    window.Hot_PrivePip = { alternar: alternarPip, fechar: fecharPip, segundoPlano: definirSegundoPlano };
+    window.HotPrivePip = { alternar: alternarPip, fechar: fecharPip, segundoPlano: definirSegundoPlano };
 })();
 
 
