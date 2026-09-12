@@ -20,6 +20,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
 </head>
 <body>
 
@@ -225,6 +226,14 @@
             <div class="player-content">
                 <div id="yt-player" class="hidden"></div>
                 <iframe id="universal-player" class="hidden" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen playsinline="1"></iframe>
+                <div id="audio-stage" class="audio-stage hidden">
+                    <img id="audio-cover" class="audio-cover" src="logo.png" alt="Capa da mídia de áudio">
+                    <div class="audio-meta">
+                        <span id="audio-title" class="audio-title"></span>
+                        <span id="audio-artist" class="audio-artist"></span>
+                        <span id="audio-warning" class="audio-warning hidden"></span>
+                    </div>
+                </div>
                 <video id="raw-player" class="hidden" controls autoplay playsinline webkit-playsinline preload="metadata"></video>
             </div>
 
