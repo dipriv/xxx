@@ -361,7 +361,7 @@ function alternarAbasLogin(modo) {
         titulo.innerText = "Recuperar Senha";
     } else {
         formLogin.classList.remove('hidden');
-        titulo.innerText = "StreamHub";
+        titulo.innerText = "Hot Prive";
     }
 }
 
@@ -466,7 +466,7 @@ function checkSession() {
                             if(e.target.tagName !== 'BUTTON') abrirModalPerfil();
                         };
                         aviso.innerHTML = `
-                            <div style="font-weight:bold; margin-bottom:5px;">Novidade no StreamHub! 🎉</div>
+                            <div style="font-weight:bold; margin-bottom:5px;">Novidade no Hot Prive! 🎉</div>
                             <p style="font-size:0.85rem; margin:0 0 10px 0; line-height:1.2rem;">Agora você pode personalizar seu perfil com nome, sobrenome e tema. <strong>Clique aqui para configurar!</strong></p>
                             <button onclick="event.stopPropagation(); document.getElementById('alert-novidade-perfil').remove()" style="background:var(--theme-color); border:none; color:#fff; padding:4px 10px; border-radius:3px; cursor:pointer; font-size:0.8rem; font-weight:bold;">Fechar</button>
                         `;
@@ -1609,7 +1609,7 @@ function setupEventListeners() {
             } catch(err) {} finally { btn.innerText = "Capturar Dados"; }
         }
 
-        if (e.target.closest('#btn-export-all-json')) { if (database.length > 0) downloadJSON(database, "backup_completo_streamhub"); else alert("Banco vazio!"); }
+        if (e.target.closest('#btn-export-all-json')) { if (database.length > 0) downloadJSON(database, "backup_completo_Hot_Prive"); else alert("Banco vazio!"); }
         if (e.target.closest('#btn-submit-json-code')) {
             const val = document.getElementById('json-input-field')?.value.trim(); if(!val) return alert("Cole o código JSON");
             try { let p = JSON.parse(val); await processarInjecaoDeDadosAcumulativa(Array.isArray(p) ? p : Object.values(p)); document.getElementById('json-input-field').value = ""; } catch(err) { alert("JSON inválido."); }
@@ -2717,7 +2717,7 @@ function preencherFormularioEstiloMaster() {
     const hex = document.getElementById("master-color-hex");
     if (hex) hex.innerText = cor.toUpperCase();
     const nome = document.getElementById("master-site-name");
-    if (nome) nome.value = c.siteNome || "StreamHub";
+    if (nome) nome.value = c.siteNome || "Hot Prive";
 
     document.querySelectorAll(".master-theme-btn").forEach(b => {
         const val = b.getAttribute("data-theme") === "youtube" ? "" : `theme-${b.getAttribute("data-theme")}`;
@@ -2819,7 +2819,7 @@ document.addEventListener("DOMContentLoaded", () => {
             salvarConfigGlobal({
                 temaPadrao: tema,
                 corPadrao: document.getElementById("master-color-input").value,
-                siteNome: document.getElementById("master-site-name").value.trim() || "StreamHub"
+                siteNome: document.getElementById("master-site-name").value.trim() || "Hot Prive"
             });
         }
 
@@ -3152,7 +3152,7 @@ async function enviarArquivoParaTV(track, link) {
     if (!sessao) return;
     const info = new chrome.cast.media.MediaInfo(link, castMimeDoArquivo(link));
     info.metadata = new chrome.cast.media.GenericMediaMetadata();
-    info.metadata.title = (track && (track.título || track.titulo)) || "StreamHub";
+    info.metadata.title = (track && (track.título || track.titulo)) || "Hot Prive";
     if (track && track.capa) info.metadata.images = [new chrome.cast.Image(track.capa)];
     const pedido = new chrome.cast.media.LoadRequest(info);
     pedido.autoplay = true;
@@ -3313,7 +3313,7 @@ function compartilharMidiaAtual() {
 
 // ==========================================
 // MENU DE OPÇÕES DE COMPARTILHAMENTO
-// Link do StreamHub, link padrão do YouTube, WhatsApp,
+// Link do Hot Prive, link padrão do YouTube, WhatsApp,
 // Facebook, Telegram, X, e-mail, cópia e menu do aparelho
 // ==========================================
 async function copiarTextoParaAreaDeTransferencia(texto) {
@@ -3340,10 +3340,10 @@ function abrirMenuCompartilhamento(info) {
     if (!info || !info.link) { castAvisar("<b>Nada para compartilhar</b>"); return; }
     fecharMenuCompartilhamento();
 
-    const titulo = (info.título || info.titulo || "StreamHub");
+    const titulo = (info.título || info.titulo || "Hot Prive");
     const linkSite = linkDeCompartilhamento(info);
     const linkYt = linkPadraoDoYoutube(info);
-    const texto = `Assista "${titulo}" no StreamHub`;
+    const texto = `Assista "${titulo}" no Hot Prive`;
 
     const overlay = document.createElement("div");
     overlay.id = "share-sheet";
@@ -3356,7 +3356,7 @@ function abrirMenuCompartilhamento(info) {
             </div>
             <p class="share-sheet-title">${titulo}</p>
             <div class="share-sheet-grid">
-                <button type="button" class="share-opt" data-share="site"><i class="fas fa-link"></i><span>Link do StreamHub</span></button>
+                <button type="button" class="share-opt" data-share="site"><i class="fas fa-link"></i><span>Link do Hot Prive</span></button>
                 ${linkYt ? '<button type="button" class="share-opt" data-share="youtube"><i class="fab fa-youtube"></i><span>Link do YouTube</span></button>' : ""}
                 <button type="button" class="share-opt" data-share="whatsapp"><i class="fab fa-whatsapp"></i><span>WhatsApp</span></button>
                 <button type="button" class="share-opt" data-share="facebook"><i class="fab fa-facebook"></i><span>Facebook</span></button>
@@ -3396,7 +3396,7 @@ function abrirMenuCompartilhamento(info) {
             const alvo = acao === "youtube" ? linkYt : linkSite;
             castAvisar(acao === "youtube"
                 ? "<b>Link do YouTube selecionado</b><br>Escolha agora por onde compartilhar."
-                : "<b>Link do StreamHub selecionado</b><br>Escolha agora por onde compartilhar.");
+                : "<b>Link do Hot Prive selecionado</b><br>Escolha agora por onde compartilhar.");
             const campo = document.getElementById("share-sheet-link");
             if (campo) campo.value = alvo;
             return;
@@ -3644,7 +3644,7 @@ document.addEventListener("click", (e) => {
 (function () {
     "use strict";
 
-    const CHAVE_BG = "streamhub_bg_play";
+    const CHAVE_BG = "Hot_Prive_bg_play";
     let bgAtivo = false;
     try { bgAtivo = localStorage.getItem(CHAVE_BG) === "1"; } catch (e) { bgAtivo = false; }
 
@@ -3718,7 +3718,7 @@ document.addEventListener("click", (e) => {
         const f = faixaAtual();
         return (f && (f["título"] || f.titulo)) ||
             document.getElementById("current-track-title")?.innerText ||
-            "StreamHub";
+            "Hot Prive";
     }
 
     function capaAtual() {
@@ -3774,7 +3774,7 @@ document.addEventListener("click", (e) => {
                 const url = criarUrlSilencio();
                 if (!url) return;
                 audioSilencioso = document.createElement("audio");
-                audioSilencioso.id = "streamhub-silencio";
+                audioSilencioso.id = "Hot-Prive-silencio";
                 audioSilencioso.src = url;
                 audioSilencioso.loop = true;
                 audioSilencioso.volume = 1;
@@ -3842,8 +3842,8 @@ document.addEventListener("click", (e) => {
             const capa = capaAtual();
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: tituloAtual(),
-                artist: "StreamHub",
-                album: "StreamHub by Di Workin'",
+                artist: "Hot Prive",
+                album: "Hot Prive",
                 artwork: capa
                     ? [
                         { src: capa, sizes: "256x256", type: "image/jpeg" },
@@ -4172,7 +4172,7 @@ document.addEventListener("click", (e) => {
         ctx.fillText(texto, L / 2, A / 2);
         ctx.font = "16px Arial, sans-serif";
         ctx.fillStyle = "#bbb";
-        ctx.fillText(usuarioPausou ? "StreamHub • pausado" : "StreamHub • tocando", L / 2, A / 2 + 32);
+        ctx.fillText(usuarioPausou ? "Hot Prive • pausado" : "Hot Prive • tocando", L / 2, A / 2 + 32);
     }
 
     function esperarEvento(el, evento, ms) {
@@ -4397,7 +4397,7 @@ document.addEventListener("click", (e) => {
     window.addEventListener("pagehide", () => { desligarAudioSilencioso(); });
 
     // Expõe para uso externo, sem alterar nada mais do app
-    window.streamhubPip = { alternar: alternarPip, fechar: fecharPip, segundoPlano: definirSegundoPlano };
+    window.HotPrivePip = { alternar: alternarPip, fechar: fecharPip, segundoPlano: definirSegundoPlano };
 })();
 
 
@@ -4620,7 +4620,7 @@ document.addEventListener('DOMContentLoaded', atualizarBotaoFavoritoDoPlayer);
    Como áudio não tem imagem, exibimos a capa da mídia:
    1) capa embutida nas tags do arquivo (ID3 / MP4 / FLAC / OGG)
    2) capa cadastrada no acervo
-   3) logo do StreamHub como último recurso
+   3) logo do Hot Prive como último recurso
    ========================================== */
 
 const EXTENSOES_AUDIO = [
@@ -4731,9 +4731,9 @@ function atualizarMetadadosDoSistema(titulo, artista, capa) {
     try {
         if (!('mediaSession' in navigator)) return;
         navigator.mediaSession.metadata = new window.MediaMetadata({
-            title: titulo || 'StreamHub',
+            title: titulo || 'Hot Prive',
             artist: artista || '',
-            album: 'StreamHub',
+            album: 'Hot Prive',
             artwork: capa ? [{ src: capa, sizes: '512x512', type: 'image/jpeg' }] : []
         });
         try { navigator.mediaSession.setActionHandler('previoustrack', () => voltarFaixa()); } catch (e) {}
