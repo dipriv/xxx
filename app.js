@@ -132,9 +132,9 @@ function iso8601ParaSegundos(iso) {
 function lerDuracaoDeArquivo(track) {
     return new Promise(resolve => {
         const link = ((track && track.link) || '').trim();
-        const ehArquivo = /\.(mp4|mkv|webm|ogg|mp3|m4a|mov)(\?|$)/i.test(link) || link.includes('raw.githubusercontent');
+        const ehArquivo = (/\.(mp4|mkv|webm|mov|m4v|avi|flv|ogv)(\?|$)/i.test(link) || ehArquivoDeAudio(link)) || link.includes('raw.githubusercontent');
         if (!ehArquivo) { duracoesCache[chaveDuracao(track)] = null; return resolve(); }
-        const el = document.createElement('video');
+        const el = document.createElement(ehArquivoDeAudio(link) ? 'audio' : 'video');
         let encerrado = false;
         const finalizar = (valor) => {
             if (encerrado) return; encerrado = true;
@@ -361,7 +361,7 @@ function alternarAbasLogin(modo) {
         titulo.innerText = "Recuperar Senha";
     } else {
         formLogin.classList.remove('hidden');
-        titulo.innerText = "Hot Prive";
+        titulo.innerText = "StreamHub";
     }
 }
 
@@ -466,7 +466,7 @@ function checkSession() {
                             if(e.target.tagName !== 'BUTTON') abrirModalPerfil();
                         };
                         aviso.innerHTML = `
-                            <div style="font-weight:bold; margin-bottom:5px;">Novidade no Hot Prive! 🎉</div>
+                            <div style="font-weight:bold; margin-bottom:5px;">Novidade no StreamHub! 🎉</div>
                             <p style="font-size:0.85rem; margin:0 0 10px 0; line-height:1.2rem;">Agora você pode personalizar seu perfil com nome, sobrenome e tema. <strong>Clique aqui para configurar!</strong></p>
                             <button onclick="event.stopPropagation(); document.getElementById('alert-novidade-perfil').remove()" style="background:var(--theme-color); border:none; color:#fff; padding:4px 10px; border-radius:3px; cursor:pointer; font-size:0.8rem; font-weight:bold;">Fechar</button>
                         `;
@@ -562,6 +562,7 @@ function limparInterfaceLocal() {
     if (ytPlayer) { try { ytPlayer.stopVideo(); } catch(e){} }
     if (document.getElementById('universal-player')) document.getElementById('universal-player').src = "";
     if (document.getElementById('raw-player')) { document.getElementById('raw-player').pause(); document.getElementById('raw-player').src = ""; }
+    esconderPalcoDeAudio();
     if (document.getElementById('login-user')) document.getElementById('login-user').value = "";
     if (document.getElementById('login-pass')) document.getElementById('login-pass').value = "";
     if (document.getElementById('recover-email')) document.getElementById('recover-email').value = "";
@@ -1037,6 +1038,7 @@ function playTrack(index) {
     if (univPlayerEl) univPlayerEl.src = ""; if (rawPlayerEl) rawPlayerEl.src = "";
     if (univPlayerEl) univPlayerEl.classList.add('hidden'); if (rawPlayerEl) rawPlayerEl.classList.add('hidden'); if (ytPlayerEl) ytPlayerEl.classList.remove('hidden');
     if (rawPlayerEl) rawPlayerEl.pause(); const linkOriginal = track.link.trim(); const vId = extractYoutubeId(linkOriginal);
+    esconderPalcoDeAudio();
 
     if(vId) {
         if (ytPlayerEl) ytPlayerEl.classList.remove('hidden');
@@ -1055,6 +1057,9 @@ function playTrack(index) {
             setTimeout(() => aplicarVolume(), 300); 
         }
     } 
+    else if (ehArquivoDeAudio(linkOriginal)) {
+        tocarAudioNoPlayer(track, linkOriginal, rawPlayerEl);
+    }
     else if(linkOriginal.toLowerCase().endsWith('.mp4') || linkOriginal.toLowerCase().endsWith('.mkv') || linkOriginal.toLowerCase().includes('raw.githubusercontent') || linkOriginal.includes('docs.google.com/uc?export=download')) {
         if (rawPlayerEl) { rawPlayerEl.classList.remove('hidden'); rawPlayerEl.src = linkOriginal; rawPlayerEl.play(); aplicarVolume(); rawPlayerEl.onended = () => { avancarFaixa(); }; }
     } 
@@ -1604,7 +1609,7 @@ function setupEventListeners() {
             } catch(err) {} finally { btn.innerText = "Capturar Dados"; }
         }
 
-        if (e.target.closest('#btn-export-all-json')) { if (database.length > 0) downloadJSON(database, "backup_completo_Hot_Prive"); else alert("Banco vazio!"); }
+        if (e.target.closest('#btn-export-all-json')) { if (database.length > 0) downloadJSON(database, "backup_completo_streamhub"); else alert("Banco vazio!"); }
         if (e.target.closest('#btn-submit-json-code')) {
             const val = document.getElementById('json-input-field')?.value.trim(); if(!val) return alert("Cole o código JSON");
             try { let p = JSON.parse(val); await processarInjecaoDeDadosAcumulativa(Array.isArray(p) ? p : Object.values(p)); document.getElementById('json-input-field').value = ""; } catch(err) { alert("JSON inválido."); }
@@ -1630,6 +1635,7 @@ function setupEventListeners() {
         if (e.target.closest('#btn-shuffle')) { alternarReproducaoAleatoria(); }
         if (e.target.closest('#btn-close-player')) {
             if(ytPlayer?.stopVideo) ytPlayer.stopVideo(); document.getElementById('universal-player').src = ""; document.getElementById('raw-player').pause();
+            esconderPalcoDeAudio();
             document.getElementById('player-container')?.classList.add('hidden');
         }
         if (e.target.closest('#btn-mute-toggle')) {
@@ -2711,7 +2717,7 @@ function preencherFormularioEstiloMaster() {
     const hex = document.getElementById("master-color-hex");
     if (hex) hex.innerText = cor.toUpperCase();
     const nome = document.getElementById("master-site-name");
-    if (nome) nome.value = c.siteNome || "Hot Prive";
+    if (nome) nome.value = c.siteNome || "StreamHub";
 
     document.querySelectorAll(".master-theme-btn").forEach(b => {
         const val = b.getAttribute("data-theme") === "youtube" ? "" : `theme-${b.getAttribute("data-theme")}`;
@@ -2813,7 +2819,7 @@ document.addEventListener("DOMContentLoaded", () => {
             salvarConfigGlobal({
                 temaPadrao: tema,
                 corPadrao: document.getElementById("master-color-input").value,
-                siteNome: document.getElementById("master-site-name").value.trim() || "Hot Prive"
+                siteNome: document.getElementById("master-site-name").value.trim() || "StreamHub"
             });
         }
 
@@ -3001,7 +3007,8 @@ function castTipoDaFonte(link) {
     const vId = (typeof extractYoutubeId === "function") ? extractYoutubeId(link) : null;
     const plId = (typeof extractPlaylistId === "function") ? extractPlaylistId(link) : null;
     if (vId || plId || url.includes("youtube.com") || url.includes("youtu.be")) return "youtube";
-    if (/\.(mp4|m4v|webm|ogv|mov|mkv|mp3|m4a|aac|ogg|m3u8|mpd|flv|avi|wav|opus)(\?|$)/.test(url)) return "media";
+    if (/\.(mp4|m4v|webm|ogv|mov|mkv|m3u8|mpd|flv|avi)(\?|$)/.test(url)) return "media";
+    if (typeof ehArquivoDeAudio === "function" && ehArquivoDeAudio(url)) return "media";
     if (url.includes("raw.githubusercontent") || url.includes("docs.google.com/uc?export=download")) return "media";
     if (url.includes("drive.google.com/file/d/")) return "media";
     if (/^https?:\/\//.test(url)) return "media"; // tentativa universal: qualquer link é enviado ao receptor
@@ -3014,9 +3021,10 @@ function castMimeDoArquivo(link) {
     if (url.includes(".mpd")) return "application/dash+xml";
     if (url.includes(".webm")) return "video/webm";
     if (url.includes(".mkv")) return "video/x-matroska";
-    if (url.includes(".mp3")) return "audio/mpeg";
-    if (url.includes(".m4a") || url.includes(".aac")) return "audio/mp4";
-    if (url.includes(".ogg") || url.includes(".ogv")) return "video/ogg";
+    if (url.includes(".ogv")) return "video/ogg";
+    if (typeof ehArquivoDeAudio === "function" && ehArquivoDeAudio(url)) {
+        return (typeof mimeDoAudio === "function" && mimeDoAudio(url)) || "audio/mpeg";
+    }
     return "video/mp4";
 }
 
@@ -3144,7 +3152,7 @@ async function enviarArquivoParaTV(track, link) {
     if (!sessao) return;
     const info = new chrome.cast.media.MediaInfo(link, castMimeDoArquivo(link));
     info.metadata = new chrome.cast.media.GenericMediaMetadata();
-    info.metadata.title = (track && (track.título || track.titulo)) || "Hot Prive";
+    info.metadata.title = (track && (track.título || track.titulo)) || "StreamHub";
     if (track && track.capa) info.metadata.images = [new chrome.cast.Image(track.capa)];
     const pedido = new chrome.cast.media.LoadRequest(info);
     pedido.autoplay = true;
@@ -3305,7 +3313,7 @@ function compartilharMidiaAtual() {
 
 // ==========================================
 // MENU DE OPÇÕES DE COMPARTILHAMENTO
-// Link do Hot Prive, link padrão do YouTube, WhatsApp,
+// Link do StreamHub, link padrão do YouTube, WhatsApp,
 // Facebook, Telegram, X, e-mail, cópia e menu do aparelho
 // ==========================================
 async function copiarTextoParaAreaDeTransferencia(texto) {
@@ -3332,10 +3340,10 @@ function abrirMenuCompartilhamento(info) {
     if (!info || !info.link) { castAvisar("<b>Nada para compartilhar</b>"); return; }
     fecharMenuCompartilhamento();
 
-    const titulo = (info.título || info.titulo || "Hot Prive");
+    const titulo = (info.título || info.titulo || "StreamHub");
     const linkSite = linkDeCompartilhamento(info);
     const linkYt = linkPadraoDoYoutube(info);
-    const texto = `Assista "${titulo}" no Hot Prive`;
+    const texto = `Assista "${titulo}" no StreamHub`;
 
     const overlay = document.createElement("div");
     overlay.id = "share-sheet";
@@ -3348,7 +3356,7 @@ function abrirMenuCompartilhamento(info) {
             </div>
             <p class="share-sheet-title">${titulo}</p>
             <div class="share-sheet-grid">
-                <button type="button" class="share-opt" data-share="site"><i class="fas fa-link"></i><span>Link do Hot Prive</span></button>
+                <button type="button" class="share-opt" data-share="site"><i class="fas fa-link"></i><span>Link do StreamHub</span></button>
                 ${linkYt ? '<button type="button" class="share-opt" data-share="youtube"><i class="fab fa-youtube"></i><span>Link do YouTube</span></button>' : ""}
                 <button type="button" class="share-opt" data-share="whatsapp"><i class="fab fa-whatsapp"></i><span>WhatsApp</span></button>
                 <button type="button" class="share-opt" data-share="facebook"><i class="fab fa-facebook"></i><span>Facebook</span></button>
@@ -3388,7 +3396,7 @@ function abrirMenuCompartilhamento(info) {
             const alvo = acao === "youtube" ? linkYt : linkSite;
             castAvisar(acao === "youtube"
                 ? "<b>Link do YouTube selecionado</b><br>Escolha agora por onde compartilhar."
-                : "<b>Link do Hot Prive selecionado</b><br>Escolha agora por onde compartilhar.");
+                : "<b>Link do StreamHub selecionado</b><br>Escolha agora por onde compartilhar.");
             const campo = document.getElementById("share-sheet-link");
             if (campo) campo.value = alvo;
             return;
@@ -3636,7 +3644,7 @@ document.addEventListener("click", (e) => {
 (function () {
     "use strict";
 
-    const CHAVE_BG = "Hot_Prive_bg_play";
+    const CHAVE_BG = "streamhub_bg_play";
     let bgAtivo = false;
     try { bgAtivo = localStorage.getItem(CHAVE_BG) === "1"; } catch (e) { bgAtivo = false; }
 
@@ -3710,7 +3718,7 @@ document.addEventListener("click", (e) => {
         const f = faixaAtual();
         return (f && (f["título"] || f.titulo)) ||
             document.getElementById("current-track-title")?.innerText ||
-            "Hot Priveb";
+            "StreamHub";
     }
 
     function capaAtual() {
@@ -3766,7 +3774,7 @@ document.addEventListener("click", (e) => {
                 const url = criarUrlSilencio();
                 if (!url) return;
                 audioSilencioso = document.createElement("audio");
-                audioSilencioso.id = "Hot Prive-silencio";
+                audioSilencioso.id = "streamhub-silencio";
                 audioSilencioso.src = url;
                 audioSilencioso.loop = true;
                 audioSilencioso.volume = 1;
@@ -3834,8 +3842,8 @@ document.addEventListener("click", (e) => {
             const capa = capaAtual();
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: tituloAtual(),
-                artist: "Hot Prive",
-                album: "Hot Prive",
+                artist: "StreamHub",
+                album: "StreamHub by Di Workin'",
                 artwork: capa
                     ? [
                         { src: capa, sizes: "256x256", type: "image/jpeg" },
@@ -4164,7 +4172,7 @@ document.addEventListener("click", (e) => {
         ctx.fillText(texto, L / 2, A / 2);
         ctx.font = "16px Arial, sans-serif";
         ctx.fillStyle = "#bbb";
-        ctx.fillText(usuarioPausou ? "Hot Prive • pausado" : "Hot Prive • tocando", L / 2, A / 2 + 32);
+        ctx.fillText(usuarioPausou ? "StreamHub • pausado" : "StreamHub • tocando", L / 2, A / 2 + 32);
     }
 
     function esperarEvento(el, evento, ms) {
@@ -4389,7 +4397,7 @@ document.addEventListener("click", (e) => {
     window.addEventListener("pagehide", () => { desligarAudioSilencioso(); });
 
     // Expõe para uso externo, sem alterar nada mais do app
-    window.HotPrivePip = { alternar: alternarPip, fechar: fecharPip, segundoPlano: definirSegundoPlano };
+    window.streamhubPip = { alternar: alternarPip, fechar: fecharPip, segundoPlano: definirSegundoPlano };
 })();
 
 
@@ -4601,3 +4609,210 @@ document.addEventListener('click', (e) => {
 });
 
 document.addEventListener('DOMContentLoaded', atualizarBotaoFavoritoDoPlayer);
+
+
+/* ==========================================
+   REPRODUÇÃO DE ARQUIVOS DE ÁUDIO NO PLAYER
+   (WAV, MP3, AAC, M4A, APE, OGG, WMA, MP2...)
+   Mantém todas as funções já existentes do player:
+   volume, mudo, anterior/próxima, aleatório, favoritos,
+   compartilhar, PiP, tela desligada, Cast e comentários.
+   Como áudio não tem imagem, exibimos a capa da mídia:
+   1) capa embutida nas tags do arquivo (ID3 / MP4 / FLAC / OGG)
+   2) capa cadastrada no acervo
+   3) logo do StreamHub como último recurso
+   ========================================== */
+
+const EXTENSOES_AUDIO = [
+    'mp3','mpga','mp2','wav','wave','flac','aac','m4a','m4b','mp4a','alac',
+    'ogg','oga','opus','spx','weba','webma','wma','ape','aif','aiff','aifc',
+    'amr','au','snd','caf','dsf','dff','wv','mpc','mka','ra','ram','mid','midi','3ga'
+];
+// Formatos que a maioria dos navegadores NÃO decodifica nativamente
+const EXTENSOES_AUDIO_LIMITADAS = ['ape','wma','wv','mpc','dsf','dff','ra','ram','mid','midi','mp2','aif','aiff','aifc','au','snd','caf','amr'];
+
+// MIME correto por extensão: sem isso alguns servidores entregam
+// "application/octet-stream" e o navegador recusa arquivos válidos (ex.: FLAC).
+const MIME_AUDIO = {
+    mp3: 'audio/mpeg', mpga: 'audio/mpeg', mp2: 'audio/mpeg',
+    wav: 'audio/wav', wave: 'audio/wav',
+    flac: 'audio/flac',
+    aac: 'audio/aac',
+    m4a: 'audio/mp4', m4b: 'audio/mp4', mp4a: 'audio/mp4', alac: 'audio/mp4',
+    ogg: 'audio/ogg', oga: 'audio/ogg', opus: 'audio/ogg; codecs=opus', spx: 'audio/ogg',
+    weba: 'audio/webm', webma: 'audio/webm', mka: 'audio/webm',
+    wma: 'audio/x-ms-wma', ape: 'audio/x-ape', wv: 'audio/x-wavpack', mpc: 'audio/x-musepack',
+    aif: 'audio/aiff', aiff: 'audio/aiff', aifc: 'audio/aiff',
+    amr: 'audio/amr', au: 'audio/basic', snd: 'audio/basic', caf: 'audio/x-caf',
+    dsf: 'audio/x-dsf', dff: 'audio/x-dff', ra: 'audio/vnd.rn-realaudio', ram: 'audio/vnd.rn-realaudio',
+    mid: 'audio/midi', midi: 'audio/midi', '3ga': 'audio/3gpp'
+};
+
+function mimeDoAudio(url) {
+    return MIME_AUDIO[extensaoDoArquivo(url)] || '';
+}
+
+// O navegador consegue tocar este arquivo?
+function navegadorSuportaAudio(url) {
+    try {
+        const teste = document.createElement('audio');
+        const mime = mimeDoAudio(url);
+        if (!mime) return true;
+        if (teste.canPlayType(mime)) return true;
+        // alguns navegadores só respondem ao MIME alternativo
+        const alternativos = {
+            'audio/flac': ['audio/x-flac', 'audio/ogg; codecs=flac'],
+            'audio/wav': ['audio/x-wav', 'audio/wave', 'audio/vnd.wave'],
+            'audio/aac': ['audio/mp4; codecs=mp4a.40.2', 'audio/aacp'],
+            'audio/mp4': ['audio/mp4; codecs=mp4a.40.2', 'audio/x-m4a'],
+            'audio/mpeg': ['audio/mp3']
+        };
+        const lista = alternativos[mime] || [];
+        for (let i = 0; i < lista.length; i++) { if (teste.canPlayType(lista[i])) return true; }
+        return false;
+    } catch (e) { return true; }
+}
+
+function extensaoDoArquivo(url) {
+    try {
+        const limpa = (url || '').split('#')[0].split('?')[0].trim().toLowerCase();
+        const ponto = limpa.lastIndexOf('.');
+        return ponto === -1 ? '' : limpa.slice(ponto + 1);
+    } catch (e) { return ''; }
+}
+
+function ehArquivoDeAudio(url) {
+    return EXTENSOES_AUDIO.indexOf(extensaoDoArquivo(url)) !== -1;
+}
+
+function esconderPalcoDeAudio() {
+    const palco = document.getElementById('audio-stage');
+    if (palco) palco.classList.add('hidden');
+    const container = document.getElementById('player-container');
+    if (container) container.classList.remove('audio-mode');
+    const aviso = document.getElementById('audio-warning');
+    if (aviso) { aviso.classList.add('hidden'); aviso.innerText = ''; }
+}
+
+function definirCapaDoAudio(src) {
+    const img = document.getElementById('audio-cover');
+    if (img && src) img.src = src;
+}
+
+function capaPadraoDoAudio(track) {
+    return (track && track.capa) ? track.capa : 'logo.png';
+}
+
+// Lê a capa embutida no arquivo (quando o servidor permitir a leitura)
+function buscarCapaEmbutida(link, aoEncontrar) {
+    if (typeof window.jsmediatags === 'undefined') return;
+    try {
+        window.jsmediatags.read(link, {
+            onSuccess: (tag) => {
+                try {
+                    const dados = tag && tag.tags ? tag.tags : {};
+                    const imagem = dados.picture;
+                    if (imagem && imagem.data && imagem.data.length) {
+                        let binario = '';
+                        const bytes = imagem.data;
+                        for (let i = 0; i < bytes.length; i++) binario += String.fromCharCode(bytes[i]);
+                        aoEncontrar('data:' + (imagem.format || 'image/jpeg') + ';base64,' + window.btoa(binario), dados);
+                    } else {
+                        aoEncontrar(null, dados);
+                    }
+                } catch (e) {}
+            },
+            onError: () => {}
+        });
+    } catch (e) {}
+}
+
+function atualizarMetadadosDoSistema(titulo, artista, capa) {
+    try {
+        if (!('mediaSession' in navigator)) return;
+        navigator.mediaSession.metadata = new window.MediaMetadata({
+            title: titulo || 'StreamHub',
+            artist: artista || '',
+            album: 'StreamHub',
+            artwork: capa ? [{ src: capa, sizes: '512x512', type: 'image/jpeg' }] : []
+        });
+        try { navigator.mediaSession.setActionHandler('previoustrack', () => voltarFaixa()); } catch (e) {}
+        try { navigator.mediaSession.setActionHandler('nexttrack', () => avancarFaixa()); } catch (e) {}
+    } catch (e) {}
+}
+
+function tocarAudioNoPlayer(track, link, rawPlayerEl) {
+    const container = document.getElementById('player-container');
+    const palco = document.getElementById('audio-stage');
+    const tituloEl = document.getElementById('audio-title');
+    const artistaEl = document.getElementById('audio-artist');
+    const aviso = document.getElementById('audio-warning');
+
+    if (container) container.classList.add('audio-mode');
+    if (palco) palco.classList.remove('hidden');
+    if (tituloEl) tituloEl.innerText = (track && track.título) ? track.título : 'Áudio';
+    if (artistaEl) artistaEl.innerText = extensaoDoArquivo(link).toUpperCase();
+    if (aviso) { aviso.classList.add('hidden'); aviso.innerText = ''; }
+
+    const capaInicial = capaPadraoDoAudio(track);
+    definirCapaDoAudio(capaInicial);
+    atualizarMetadadosDoSistema(track && track.título, '', capaInicial);
+
+    buscarCapaEmbutida(link, (capa, dados) => {
+        if (capa) {
+            definirCapaDoAudio(capa);
+            atualizarMetadadosDoSistema(track && track.título, dados && dados.artist, capa);
+        }
+        if (artistaEl && dados) {
+            const partes = [];
+            if (dados.artist) partes.push(dados.artist);
+            if (dados.album) partes.push(dados.album);
+            partes.push(extensaoDoArquivo(link).toUpperCase());
+            artistaEl.innerText = partes.join(' • ');
+        }
+    });
+
+    if (!rawPlayerEl) return;
+    rawPlayerEl.classList.remove('hidden');
+    rawPlayerEl.classList.add('as-audio');
+    rawPlayerEl.setAttribute('poster', '');
+
+    // Informa o tipo correto ao navegador (FLAC, OPUS, AAC etc.)
+    try { while (rawPlayerEl.firstChild) rawPlayerEl.removeChild(rawPlayerEl.firstChild); } catch (e) {}
+    try { rawPlayerEl.removeAttribute('src'); } catch (e) {}
+    const fonte = document.createElement('source');
+    fonte.src = link;
+    const mime = mimeDoAudio(link);
+    if (mime) fonte.type = mime;
+    fonte.onerror = () => { if (rawPlayerEl.onerror) rawPlayerEl.onerror(); };
+    rawPlayerEl.appendChild(fonte);
+    try { rawPlayerEl.load(); } catch (e) {}
+
+    rawPlayerEl.onended = () => { avancarFaixa(); };
+    rawPlayerEl.onerror = () => {
+        // 2ª tentativa: alguns servidores só funcionam com src direto (sem type)
+        if (!rawPlayerEl.dataset.tentativaDireta) {
+            rawPlayerEl.dataset.tentativaDireta = '1';
+            try { while (rawPlayerEl.firstChild) rawPlayerEl.removeChild(rawPlayerEl.firstChild); } catch (e) {}
+            rawPlayerEl.src = link;
+            try { rawPlayerEl.load(); } catch (e) {}
+            const p2 = rawPlayerEl.play();
+            if (p2 && p2.catch) p2.catch(() => {});
+            return;
+        }
+        if (!aviso) return;
+        aviso.classList.remove('hidden');
+        const ext = extensaoDoArquivo(link).toUpperCase();
+        aviso.innerText = !navegadorSuportaAudio(link)
+            ? `Este navegador não reproduz o formato ${ext} nativamente. Converta para MP3, FLAC, M4A, OGG/OPUS ou WAV.`
+            : 'Não foi possível carregar este áudio. Verifique o link do arquivo (ou as permissões do servidor).';
+    };
+    delete rawPlayerEl.dataset.tentativaDireta;
+    if (aviso && !navegadorSuportaAudio(link)) {
+        aviso.classList.remove('hidden');
+        aviso.innerText = `Formato ${extensaoDoArquivo(link).toUpperCase()} pode não ser suportado por este navegador. Tentando reproduzir mesmo assim...`;
+    }
+    const promessa = rawPlayerEl.play();
+    if (promessa && promessa.catch) promessa.catch(() => {});
+    aplicarVolume();
+}
