@@ -361,7 +361,7 @@ function alternarAbasLogin(modo) {
         titulo.innerText = "Recuperar Senha";
     } else {
         formLogin.classList.remove('hidden');
-        titulo.innerText = "xHub";
+        titulo.innerText = "xHot";
     }
 }
 
@@ -466,7 +466,7 @@ function checkSession() {
                             if(e.target.tagName !== 'BUTTON') abrirModalPerfil();
                         };
                         aviso.innerHTML = `
-                            <div style="font-weight:bold; margin-bottom:5px;">Novidade no xHub! 🎉</div>
+                            <div style="font-weight:bold; margin-bottom:5px;">Novidade no xHot! 🎉</div>
                             <p style="font-size:0.85rem; margin:0 0 10px 0; line-height:1.2rem;">Agora você pode personalizar seu perfil com nome, sobrenome e tema. <strong>Clique aqui para configurar!</strong></p>
                             <button onclick="event.stopPropagation(); document.getElementById('alert-novidade-perfil').remove()" style="background:var(--theme-color); border:none; color:#fff; padding:4px 10px; border-radius:3px; cursor:pointer; font-size:0.8rem; font-weight:bold;">Fechar</button>
                         `;
@@ -1609,7 +1609,7 @@ function setupEventListeners() {
             } catch(err) {} finally { btn.innerText = "Capturar Dados"; }
         }
 
-        if (e.target.closest('#btn-export-all-json')) { if (database.length > 0) downloadJSON(database, "backup_completo_xHub"); else alert("Banco vazio!"); }
+        if (e.target.closest('#btn-export-all-json')) { if (database.length > 0) downloadJSON(database, "backup_completo_xHot"); else alert("Banco vazio!"); }
         if (e.target.closest('#btn-submit-json-code')) {
             const val = document.getElementById('json-input-field')?.value.trim(); if(!val) return alert("Cole o código JSON");
             try { let p = JSON.parse(val); await processarInjecaoDeDadosAcumulativa(Array.isArray(p) ? p : Object.values(p)); document.getElementById('json-input-field').value = ""; } catch(err) { alert("JSON inválido."); }
@@ -2717,7 +2717,7 @@ function preencherFormularioEstiloMaster() {
     const hex = document.getElementById("master-color-hex");
     if (hex) hex.innerText = cor.toUpperCase();
     const nome = document.getElementById("master-site-name");
-    if (nome) nome.value = c.siteNome || "xHub";
+    if (nome) nome.value = c.siteNome || "xHot";
 
     document.querySelectorAll(".master-theme-btn").forEach(b => {
         const val = b.getAttribute("data-theme") === "youtube" ? "" : `theme-${b.getAttribute("data-theme")}`;
@@ -2819,7 +2819,7 @@ document.addEventListener("DOMContentLoaded", () => {
             salvarConfigGlobal({
                 temaPadrao: tema,
                 corPadrao: document.getElementById("master-color-input").value,
-                siteNome: document.getElementById("master-site-name").value.trim() || "xHub"
+                siteNome: document.getElementById("master-site-name").value.trim() || "xHot"
             });
         }
 
@@ -3152,7 +3152,7 @@ async function enviarArquivoParaTV(track, link) {
     if (!sessao) return;
     const info = new chrome.cast.media.MediaInfo(link, castMimeDoArquivo(link));
     info.metadata = new chrome.cast.media.GenericMediaMetadata();
-    info.metadata.title = (track && (track.título || track.titulo)) || "xHub";
+    info.metadata.title = (track && (track.título || track.titulo)) || "xHot";
     if (track && track.capa) info.metadata.images = [new chrome.cast.Image(track.capa)];
     const pedido = new chrome.cast.media.LoadRequest(info);
     pedido.autoplay = true;
@@ -3313,7 +3313,7 @@ function compartilharMidiaAtual() {
 
 // ==========================================
 // MENU DE OPÇÕES DE COMPARTILHAMENTO
-// Link do xHub, link padrão do YouTube, WhatsApp,
+// Link do xHot, link padrão do YouTube, WhatsApp,
 // Facebook, Telegram, X, e-mail, cópia e menu do aparelho
 // ==========================================
 async function copiarTextoParaAreaDeTransferencia(texto) {
@@ -3340,10 +3340,10 @@ function abrirMenuCompartilhamento(info) {
     if (!info || !info.link) { castAvisar("<b>Nada para compartilhar</b>"); return; }
     fecharMenuCompartilhamento();
 
-    const titulo = (info.título || info.titulo || "xHub");
+    const titulo = (info.título || info.titulo || "xHot");
     const linkSite = linkDeCompartilhamento(info);
     const linkYt = linkPadraoDoYoutube(info);
-    const texto = `Assista "${titulo}" no xHub`;
+    const texto = `Assista "${titulo}" no xHot`;
 
     const overlay = document.createElement("div");
     overlay.id = "share-sheet";
@@ -3356,7 +3356,7 @@ function abrirMenuCompartilhamento(info) {
             </div>
             <p class="share-sheet-title">${titulo}</p>
             <div class="share-sheet-grid">
-                <button type="button" class="share-opt" data-share="site"><i class="fas fa-link"></i><span>Link do xHub</span></button>
+                <button type="button" class="share-opt" data-share="site"><i class="fas fa-link"></i><span>Link do xHot</span></button>
                 ${linkYt ? '<button type="button" class="share-opt" data-share="youtube"><i class="fab fa-youtube"></i><span>Link do YouTube</span></button>' : ""}
                 <button type="button" class="share-opt" data-share="whatsapp"><i class="fab fa-whatsapp"></i><span>WhatsApp</span></button>
                 <button type="button" class="share-opt" data-share="facebook"><i class="fab fa-facebook"></i><span>Facebook</span></button>
@@ -3396,7 +3396,7 @@ function abrirMenuCompartilhamento(info) {
             const alvo = acao === "youtube" ? linkYt : linkSite;
             castAvisar(acao === "youtube"
                 ? "<b>Link do YouTube selecionado</b><br>Escolha agora por onde compartilhar."
-                : "<b>Link do xHub selecionado</b><br>Escolha agora por onde compartilhar.");
+                : "<b>Link do xHot selecionado</b><br>Escolha agora por onde compartilhar.");
             const campo = document.getElementById("share-sheet-link");
             if (campo) campo.value = alvo;
             return;
@@ -3644,7 +3644,7 @@ document.addEventListener("click", (e) => {
 (function () {
     "use strict";
 
-    const CHAVE_BG = "xHub_bg_play";
+    const CHAVE_BG = "xHot_bg_play";
     let bgAtivo = false;
     try { bgAtivo = localStorage.getItem(CHAVE_BG) === "1"; } catch (e) { bgAtivo = false; }
 
@@ -3718,7 +3718,7 @@ document.addEventListener("click", (e) => {
         const f = faixaAtual();
         return (f && (f["título"] || f.titulo)) ||
             document.getElementById("current-track-title")?.innerText ||
-            "xHub";
+            "xHot";
     }
 
     function capaAtual() {
@@ -3774,7 +3774,7 @@ document.addEventListener("click", (e) => {
                 const url = criarUrlSilencio();
                 if (!url) return;
                 audioSilencioso = document.createElement("audio");
-                audioSilencioso.id = "xHub-silencio";
+                audioSilencioso.id = "xHot-silencio";
                 audioSilencioso.src = url;
                 audioSilencioso.loop = true;
                 audioSilencioso.volume = 1;
@@ -3842,8 +3842,8 @@ document.addEventListener("click", (e) => {
             const capa = capaAtual();
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: tituloAtual(),
-                artist: "xHub",
-                album: "xHub",
+                artist: "xHot",
+                album: "xHot",
                 artwork: capa
                     ? [
                         { src: capa, sizes: "256x256", type: "image/jpeg" },
@@ -4172,7 +4172,7 @@ document.addEventListener("click", (e) => {
         ctx.fillText(texto, L / 2, A / 2);
         ctx.font = "16px Arial, sans-serif";
         ctx.fillStyle = "#bbb";
-        ctx.fillText(usuarioPausou ? "xHub • pausado" : "xHub • tocando", L / 2, A / 2 + 32);
+        ctx.fillText(usuarioPausou ? "xHot • pausado" : "xHot • tocando", L / 2, A / 2 + 32);
     }
 
     function esperarEvento(el, evento, ms) {
@@ -4397,7 +4397,7 @@ document.addEventListener("click", (e) => {
     window.addEventListener("pagehide", () => { desligarAudioSilencioso(); });
 
     // Expõe para uso externo, sem alterar nada mais do app
-    window.xHubPip = { alternar: alternarPip, fechar: fecharPip, segundoPlano: definirSegundoPlano };
+    window.xHotPip = { alternar: alternarPip, fechar: fecharPip, segundoPlano: definirSegundoPlano };
 })();
 
 
@@ -4620,7 +4620,7 @@ document.addEventListener('DOMContentLoaded', atualizarBotaoFavoritoDoPlayer);
    Como áudio não tem imagem, exibimos a capa da mídia:
    1) capa embutida nas tags do arquivo (ID3 / MP4 / FLAC / OGG)
    2) capa cadastrada no acervo
-   3) logo do xHub como último recurso
+   3) logo do xHot como último recurso
    ========================================== */
 
 const EXTENSOES_AUDIO = [
@@ -4731,9 +4731,9 @@ function atualizarMetadadosDoSistema(titulo, artista, capa) {
     try {
         if (!('mediaSession' in navigator)) return;
         navigator.mediaSession.metadata = new window.MediaMetadata({
-            title: titulo || 'xHub',
+            title: titulo || 'xHot',
             artist: artista || '',
-            album: 'xHub',
+            album: 'xHot',
             artwork: capa ? [{ src: capa, sizes: '512x512', type: 'image/jpeg' }] : []
         });
         try { navigator.mediaSession.setActionHandler('previoustrack', () => voltarFaixa()); } catch (e) {}
@@ -4838,8 +4838,102 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
         nextPageToken: "",
         contexto: null,           // dados da view atual (canal, playlist...)
         carregando: false,
+        logado: false,
         historico: []
     };
+
+    // ==========================================================
+    // HISTÓRICO DE NAVEGAÇÃO (setas voltar / avançar)
+    // + PERSISTÊNCIA DE TUDO QUE FOI ACESSADO
+    // ==========================================================
+    const CHAVE_ESTADO = "sh_mini_yt_estado";
+    const nav = { pilha: [], pos: -1, restaurando: false };
+    let acaoPendente = null;
+
+    function salvarPersistencia(extra) {
+        try {
+            const base = {
+                pilha: nav.pilha.slice(-50),
+                pos: Math.min(nav.pos, 49),
+                aberto: !!gs.ativo,
+                logado: !!gs.logado,
+                query: gs.query || "",
+                pendente: acaoPendente || null,
+                retomar: false
+            };
+            const anterior = lerPersistencia() || {};
+            localStorage.setItem(CHAVE_ESTADO, JSON.stringify(Object.assign({}, anterior, base, extra || {})));
+        } catch (e) { }
+    }
+
+    function lerPersistencia() {
+        try { return JSON.parse(localStorage.getItem(CHAVE_ESTADO) || "null"); } catch (e) { return null; }
+    }
+
+    function restaurarPersistencia() {
+        const d = lerPersistencia();
+        if (!d || !Array.isArray(d.pilha) || !d.pilha.length) return null;
+        nav.pilha = d.pilha;
+        nav.pos = (typeof d.pos === "number" && d.pos >= 0 && d.pos < d.pilha.length) ? d.pos : d.pilha.length - 1;
+        gs.query = d.query || "";
+        return d;
+    }
+
+    function empilhar(estado) {
+        if (nav.restaurando || !estado) return;
+        const atual = nav.pilha[nav.pos];
+        try { if (atual && JSON.stringify(atual) === JSON.stringify(estado)) return; } catch (e) { }
+        nav.pilha = nav.pilha.slice(0, nav.pos + 1);
+        nav.pilha.push(estado);
+        if (nav.pilha.length > 60) nav.pilha.shift();
+        nav.pos = nav.pilha.length - 1;
+        atualizarSetas();
+        salvarPersistencia();
+    }
+
+    async function aplicarEstado(st) {
+        if (!st) return;
+        nav.restaurando = true;
+        try {
+            if (st.tipo === "home") {
+                gs.view = "home";
+                renderChips(!st.categoriaId);
+                await carregarPopulares(st.categoriaId || "");
+            } else if (st.tipo === "search") {
+                await pesquisar(st.query, st.filtro || "video", true);
+            } else if (st.tipo === "channel") {
+                await abrirCanal(st.id);
+            } else if (st.tipo === "playlist") {
+                await abrirPlaylist(st.id);
+            } else if (st.tipo === "watch") {
+                await abrirVideo(st.id);
+            }
+        } catch (e) { } finally {
+            nav.restaurando = false;
+            atualizarSetas();
+        }
+    }
+
+    function voltarNav() {
+        if (nav.pos <= 0) return;
+        nav.pos--;
+        salvarPersistencia();
+        aplicarEstado(nav.pilha[nav.pos]);
+    }
+
+    function avancarNav() {
+        if (nav.pos >= nav.pilha.length - 1) return;
+        nav.pos++;
+        salvarPersistencia();
+        aplicarEstado(nav.pilha[nav.pos]);
+    }
+
+    function atualizarSetas() {
+        const b = document.getElementById("guest-btn-back");
+        const f = document.getElementById("guest-btn-fwd");
+        if (b) b.disabled = nav.pos <= 0;
+        if (f) f.disabled = nav.pos >= nav.pilha.length - 1;
+    }
 
     // ---------- utilidades ----------
 
@@ -4919,7 +5013,9 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
 
     // ---------- bloqueio de recursos que exigem conta ----------
 
-    window.exigirLoginGuest = function (acao) {
+    window.exigirLoginGuest = function (acao, dados) {
+        acaoPendente = dados ? Object.assign({ rotulo: acao || "" }, dados) : (acao ? { rotulo: acao } : null);
+        salvarPersistencia();
         const texto = acao ? `Para ${acao} é necessário entrar na sua conta.` : "Esta função é exclusiva para usuários com conta.";
         const box = document.getElementById("guest-login-required");
         if (box) {
@@ -4945,9 +5041,13 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
         wrap.innerHTML = `
             <header class="guest-header">
                 <div class="guest-header-left">
-                    <button class="guest-icon-btn guest-menu-btn" id="guest-btn-menu" title="Menu"><i class="fas fa-bars"></i></button>
+                    <button class="guest-icon-btn guest-menu-btn" id="guest-btn-menu" title="Menu" aria-label="Abrir ou recolher menu" aria-controls="guest-sidebar" aria-expanded="true"><i class="fas fa-bars"></i></button>
+                    <div class="guest-nav-arrows">
+                        <button class="guest-icon-btn guest-nav-arrow" id="guest-btn-back" title="Voltar" aria-label="Voltar" disabled><i class="fas fa-arrow-left"></i></button>
+                        <button class="guest-icon-btn guest-nav-arrow" id="guest-btn-fwd" title="Avançar" aria-label="Avançar" disabled><i class="fas fa-arrow-right"></i></button>
+                    </div>
                     <div class="guest-brand" id="guest-brand" title="Início">
-                        <i class="fab fa-youtube"></i><span>xHub <small>Livre</small></span>
+                        <i class="fab fa-youtube"></i><span>xHot <small>Livre</small></span>
                     </div>
                 </div>
                 <div class="guest-header-center">
@@ -4959,6 +5059,7 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
                 <div class="guest-header-right">
                     <button class="guest-icon-btn guest-only-mobile" id="guest-btn-search-mobile" title="Pesquisar"><i class="fas fa-search"></i></button>
                     <button class="guest-btn-login" id="guest-btn-entrar"><i class="fas fa-right-to-bracket"></i> <span>Entrar / Cadastrar</span></button>
+                    <button class="guest-btn-voltar-app" id="guest-btn-voltar-app" title="Voltar para o xHot"><i class="fas fa-arrow-right-from-bracket"></i> <span>Voltar ao xHot</span></button>
                 </div>
             </header>
 
@@ -4970,6 +5071,7 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
             </div>
 
             <div class="guest-body">
+                <div class="guest-sidebar-backdrop" id="guest-sidebar-backdrop" aria-hidden="true"></div>
                 <aside class="guest-sidebar" id="guest-sidebar">
                     <button class="guest-side-item active" data-guest-nav="home"><i class="fas fa-house"></i> Início</button>
                     <button class="guest-side-item" data-guest-nav="trending"><i class="fas fa-fire"></i> Em alta</button>
@@ -4980,10 +5082,10 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
                     <button class="guest-side-item" data-guest-nav="movies"><i class="fas fa-film"></i> Filmes</button>
                     <hr class="guest-side-sep">
                     <div class="guest-side-title">Sua conta</div>
-                    <button class="guest-side-item guest-locked" data-guest-locked="ver seu acervo pessoal"><i class="fas fa-photo-film"></i> Meu acervo <i class="fas fa-lock guest-lock-ico"></i></button>
-                    <button class="guest-side-item guest-locked" data-guest-locked="usar os favoritos"><i class="fas fa-heart"></i> Favoritos <i class="fas fa-lock guest-lock-ico"></i></button>
-                    <button class="guest-side-item guest-locked" data-guest-locked="salvar mídias na sua conta"><i class="fas fa-plus"></i> Adicionar mídia <i class="fas fa-lock guest-lock-ico"></i></button>
-                    <button class="guest-side-item guest-locked" data-guest-locked="vincular canais ao seu acervo"><i class="fas fa-tv"></i> Vincular canal <i class="fas fa-lock guest-lock-ico"></i></button>
+                    <button class="guest-side-item guest-locked" data-guest-acao="acervo" data-guest-locked="ver seu acervo pessoal"><i class="fas fa-photo-film"></i> Meu acervo <i class="fas fa-lock guest-lock-ico"></i></button>
+                    <button class="guest-side-item guest-locked" data-guest-acao="favoritos" data-guest-locked="usar os favoritos"><i class="fas fa-heart"></i> Favoritos <i class="fas fa-lock guest-lock-ico"></i></button>
+                    <button class="guest-side-item guest-locked" data-guest-acao="adicionar" data-guest-locked="salvar mídias na sua conta"><i class="fas fa-plus"></i> Adicionar mídia <i class="fas fa-lock guest-lock-ico"></i></button>
+                    <button class="guest-side-item guest-locked" data-guest-acao="vincular-canal" data-guest-locked="vincular canais ao seu acervo"><i class="fas fa-tv"></i> Vincular canal <i class="fas fa-lock guest-lock-ico"></i></button>
                     <hr class="guest-side-sep">
                     <p class="guest-side-note">Você está navegando sem login. Crie sua conta gratuita para montar seu próprio acervo de mídias.</p>
                     <button class="guest-side-cta" id="guest-side-cta">Criar minha conta</button>
@@ -4994,6 +5096,13 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
                     <div id="guest-content" class="guest-content"></div>
                     <div class="guest-loadmore-row" id="guest-loadmore-row"></div>
                 </main>
+            </div>
+
+            <div class="guest-theme-switcher" role="group" aria-label="Selecionar tema">
+                <button type="button" class="theme-btn-toggle btn-t-yt" data-guest-theme="youtube" title="Tema YouTube" aria-label="Tema YouTube"><i class="fab fa-youtube"></i></button>
+                <button type="button" class="theme-btn-toggle btn-t-nf" data-guest-theme="netflix" title="Tema Netflix" aria-label="Tema Netflix"><i class="fas fa-play"></i></button>
+                <button type="button" class="theme-btn-toggle btn-t-ft" data-guest-theme="futurista" title="Tema Cyberpunk Futurista" aria-label="Tema Cyberpunk Futurista"><i class="fas fa-bolt"></i></button>
+                <button type="button" class="theme-btn-toggle btn-t-cl" data-guest-theme="claro" title="Tema Claro Moderno" aria-label="Tema Claro Moderno"><i class="fas fa-sun"></i></button>
             </div>
 
             <div id="guest-login-required" class="guest-lr-overlay hidden">
@@ -5018,7 +5127,22 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
         const $ = (id) => document.getElementById(id);
 
         $("guest-brand").onclick = () => irPara("home");
-        $("guest-btn-menu").onclick = () => $("guest-sidebar").classList.toggle("open");
+        $("guest-btn-menu").onclick = () => definirSidebarGuest(!sidebarGuestAberta());
+        $("guest-sidebar-backdrop").onclick = () => definirSidebarGuest(false);
+        $("guest-container").addEventListener("pointerdown", (ev) => {
+            if (window.innerWidth > 820 || !sidebarGuestAberta()) return;
+            if (ev.target.closest("#guest-sidebar, #guest-btn-menu")) return;
+            definirSidebarGuest(false);
+        });
+        window.addEventListener("resize", () => {
+            definirSidebarGuest(window.innerWidth > 820 && !$("guest-container").classList.contains("guest-sidebar-collapsed"));
+        });
+        $("guest-container").querySelectorAll("[data-guest-theme]").forEach(btn => {
+            btn.onclick = () => selecionarTemaGuest(btn.getAttribute("data-guest-theme"));
+        });
+        $("guest-btn-back").onclick = voltarNav;
+        $("guest-btn-fwd").onclick = avancarNav;
+        $("guest-btn-voltar-app").onclick = () => fecharMiniYoutube();
         $("guest-btn-entrar").onclick = () => sairDoModoGuest("login");
         $("guest-side-cta").onclick = () => sairDoModoGuest("cadastro");
         $("guest-lr-cancel").onclick = fecharAvisoLogin;
@@ -5028,7 +5152,7 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
         const disparar = (inputId) => {
             const v = ($(inputId)?.value || "").trim();
             if (!v) return;
-            $("guest-sidebar").classList.remove("open");
+            if (window.innerWidth <= 820) definirSidebarGuest(false);
             $("guest-mobile-search").classList.add("hidden");
             pesquisar(v, gs.filtro || "video");
         };
@@ -5042,34 +5166,271 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
             btn.onclick = () => {
                 document.querySelectorAll("[data-guest-nav]").forEach(b => b.classList.remove("active"));
                 btn.classList.add("active");
-                $("guest-sidebar").classList.remove("open");
+                if (window.innerWidth <= 820) definirSidebarGuest(false);
                 irPara(btn.getAttribute("data-guest-nav"));
             };
         });
         document.querySelectorAll("[data-guest-locked]").forEach(btn => {
-            btn.onclick = () => window.exigirLoginGuest(btn.getAttribute("data-guest-locked"));
+            btn.onclick = (ev) => { ev.stopPropagation(); tratarBotaoRestrito(btn); };
         });
+
+        document.addEventListener("keydown", (ev) => {
+            if (!gs.ativo) return;
+            if (ev.altKey && ev.key === "ArrowLeft") { ev.preventDefault(); voltarNav(); }
+            if (ev.altKey && ev.key === "ArrowRight") { ev.preventDefault(); avancarNav(); }
+        });
+    }
+
+    function sidebarGuestAberta() {
+        const wrap = document.getElementById("guest-container");
+        return window.innerWidth <= 820
+            ? wrap.classList.contains("guest-sidebar-open")
+            : !wrap.classList.contains("guest-sidebar-collapsed");
+    }
+
+    function definirSidebarGuest(aberta) {
+        const wrap = document.getElementById("guest-container");
+        if (!wrap) return;
+        wrap.classList.toggle("guest-sidebar-open", window.innerWidth <= 820 && aberta);
+        if (window.innerWidth > 820) wrap.classList.toggle("guest-sidebar-collapsed", !aberta);
+        document.getElementById("guest-btn-menu")?.setAttribute("aria-expanded", String(aberta));
+    }
+
+    const TEMAS_GUEST = ["theme-netflix", "theme-futurista", "theme-claro"];
+    function selecionarTemaGuest(tema) {
+        const classe = tema === "youtube" ? "" : `theme-${tema}`;
+        if (classe && !TEMAS_GUEST.includes(classe)) return;
+        document.body.classList.remove(...TEMAS_GUEST);
+        if (classe) document.body.classList.add(classe);
+        document.querySelectorAll("[data-guest-theme]").forEach(btn => {
+            btn.setAttribute("aria-pressed", String(btn.getAttribute("data-guest-theme") === tema));
+        });
+        try { localStorage.setItem("sh_mini_yt_tema", classe); } catch (e) { }
+        if (gs.logado && typeof salvarPreferenciaNoFirebase === "function") salvarPreferenciaNoFirebase({ tema: classe });
+    }
+
+    // ==========================================================
+    // AÇÕES RESTRITAS: bloqueadas sem login / liberadas logado
+    // ==========================================================
+    function dadosDoBotao(btn) {
+        return {
+            acao: btn.getAttribute("data-guest-acao") || "",
+            videoId: btn.getAttribute("data-yt-id") || "",
+            playlistId: btn.getAttribute("data-yt-playlist") || "",
+            channelId: btn.getAttribute("data-yt-channel") || "",
+            titulo: btn.getAttribute("data-yt-title") || "",
+            capa: btn.getAttribute("data-yt-thumb") || ""
+        };
+    }
+
+    function tratarBotaoRestrito(btn) {
+        const info = dadosDoBotao(btn);
+        if (!gs.logado) {
+            window.exigirLoginGuest(btn.getAttribute("data-guest-locked"), info);
+            return;
+        }
+        executarAcaoLiberada(info, btn);
+    }
+
+    function abrirNoApp(executar) {
+        fecharMiniYoutube();
+        setTimeout(() => { try { executar(); } catch (e) { } }, 120);
+    }
+
+    function clicarSeExistir(id) {
+        const el = document.getElementById(id);
+        if (el) el.click();
+    }
+
+    function abrirAdminNaAba(aba, gatilho) {
+        document.getElementById("admin-modal")?.classList.remove("hidden");
+        if (typeof switchTabs === "function") switchTabs(aba, gatilho);
+    }
+
+    function executarAcaoLiberada(info, btn) {
+        const acao = info.acao;
+
+        if (acao === "acervo") { abrirNoApp(() => { }); return; }
+        if (acao === "favoritos") { abrirNoApp(() => clicarSeExistir("btn-favorites")); return; }
+        if (acao === "adicionar") { abrirNoApp(() => abrirAdminNaAba("add-tab", "tab-trigger-add")); return; }
+        if (acao === "vincular-canal" || acao === "vincular-este-canal" || acao === "salvar-canal") {
+            abrirNoApp(() => {
+                abrirAdminNaAba("channel-tab", "tab-trigger-channel");
+                const campo = document.getElementById("search-channel-input");
+                if (campo && info.titulo) {
+                    campo.value = info.titulo;
+                    campo.focus();
+                    document.getElementById("btn-search-channel")?.click();
+                }
+            });
+            return;
+        }
+        if (acao === "salvar-video" && info.videoId) {
+            abrirNoApp(() => {
+                if (typeof openAdminWithTrack === "function") {
+                    openAdminWithTrack({ type: "video", youtubeId: info.videoId, thumb: info.capa, title: info.titulo });
+                } else { abrirAdminNaAba("add-tab", "tab-trigger-add"); }
+            });
+            return;
+        }
+        if (acao === "salvar-playlist" && info.playlistId) {
+            abrirNoApp(() => {
+                if (typeof openAdminWithTrack === "function") {
+                    openAdminWithTrack({ type: "playlist", youtubeId: info.playlistId, thumb: info.capa, title: info.titulo });
+                } else { abrirAdminNaAba("add-tab", "tab-trigger-add"); }
+            });
+            return;
+        }
+        if (acao === "favoritar" && info.videoId) {
+            try {
+                const track = {
+                    "título": info.titulo || "Vídeo do YouTube",
+                    link: `https://www.youtube.com/embed/${info.videoId}`,
+                    capa: info.capa || `https://img.youtube.com/vi/${info.videoId}/hqdefault.jpg`,
+                    categoria: "Mini YouTube",
+                    subcategoria: "Favoritos"
+                };
+                if (typeof alternarFavorito === "function") alternarFavorito({ track });
+                const ativo = (typeof ehFavorito === "function") ? ehFavorito({ track }) : true;
+                if (btn) {
+                    btn.classList.toggle("guest-fav-on", !!ativo);
+                    btn.innerHTML = `<i class="fas fa-heart"></i> ${ativo ? "Favoritado" : "Favoritar"}`;
+                }
+            } catch (e) { }
+            return;
+        }
+        if (acao === "comentar") { montarComposerGuest(); return; }
+    }
+
+    // ---------- caixa de comentário (somente logado) ----------
+    function montarComposerGuest() {
+        const box = document.getElementById("guest-comment-compose");
+        if (!box || !gs.logado) return;
+        const temToken = (typeof googleAccessToken !== "undefined" && googleAccessToken) &&
+            (typeof usuarioEhDoGoogle !== "function" || usuarioEhDoGoogle());
+        if (!temToken) {
+            box.innerHTML = `
+                <div class="guest-compose">
+                    <p class="guest-compose-hint">Autorize sua conta Google para comentar direto por aqui.</p>
+                    <button type="button" class="guest-compose-google" id="guest-btn-google-coment"><i class="fab fa-google"></i> Autorizar Google</button>
+                </div>`;
+            const b = document.getElementById("guest-btn-google-coment");
+            if (b) b.onclick = async () => {
+                if (typeof pedirLoginGoogleParaComentar === "function") {
+                    const ok = await pedirLoginGoogleParaComentar();
+                    if (ok) montarComposerGuest();
+                }
+            };
+            return;
+        }
+        box.innerHTML = `
+            <div class="guest-compose">
+                <textarea id="guest-coment-texto" placeholder="Escreva um comentário público..."></textarea>
+                <button type="button" class="guest-compose-send" id="guest-coment-enviar"><i class="fas fa-paper-plane"></i> Comentar</button>
+            </div>`;
+        document.getElementById("guest-coment-enviar").onclick = enviarComentarioGuest;
+    }
+
+    async function enviarComentarioGuest() {
+        const campo = document.getElementById("guest-coment-texto");
+        const botao = document.getElementById("guest-coment-enviar");
+        const videoId = gs.contexto && gs.contexto.tipo === "watch" ? gs.contexto.videoId : "";
+        if (!campo || !videoId) return;
+        const texto = campo.value.trim();
+        if (!texto) { campo.focus(); return; }
+        if (botao) { botao.disabled = true; botao.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...'; }
+        try {
+            const res = await fetch("https://www.googleapis.com/youtube/v3/commentThreads?part=snippet", {
+                method: "POST",
+                headers: { "Authorization": "Bearer " + googleAccessToken, "Content-Type": "application/json" },
+                body: JSON.stringify({ snippet: { videoId, topLevelComment: { snippet: { textOriginal: texto } } } })
+            });
+            const dados = await res.json().catch(() => ({}));
+            if (dados.error) {
+                if (res.status === 401 || res.status === 403) {
+                    googleAccessToken = null;
+                    try { sessionStorage.removeItem("gToken"); } catch (e) { }
+                    alert("Sua autorização do Google expirou. Autorize novamente para comentar.");
+                    montarComposerGuest();
+                } else {
+                    alert("Não foi possível publicar o comentário: " + (dados.error.message || "erro desconhecido"));
+                }
+                return;
+            }
+            campo.value = "";
+            carregarComentariosGuest(videoId);
+        } catch (e) {
+            alert("Erro de rede ao publicar o comentário.");
+        } finally {
+            if (botao) { botao.disabled = false; botao.innerHTML = '<i class="fas fa-paper-plane"></i> Comentar'; }
+        }
     }
 
     // ---------- entrada / saída do modo ----------
 
-    window.abrirModoGuest = function () {
+    function estaLogado() {
+        try { return !!firebase.auth().currentUser; } catch (e) { return false; }
+    }
+
+    function aplicarModoLogado(logado) {
+        gs.logado = !!logado;
+        document.body.classList.toggle("mini-yt-logado", !!logado);
+        const cont = document.getElementById("guest-container");
+        if (cont) cont.classList.toggle("guest-liberado", !!logado);
+    }
+
+    // Abre o Mini YouTube. opcoes.logado = true libera todas as funções.
+    window.abrirModoGuest = function (opcoes) {
+        const op = opcoes || {};
         montarInterface();
+        aplicarModoLogado(estaLogado());
+        if (!gs.logado) {
+            try { selecionarTemaGuest((localStorage.getItem("sh_mini_yt_tema") || "").replace(/^theme-/, "") || "youtube"); } catch (e) { }
+        } else {
+            const temaAtual = TEMAS_GUEST.find(t => document.body.classList.contains(t));
+            document.querySelectorAll("[data-guest-theme]").forEach(btn => btn.setAttribute("aria-pressed", String(btn.getAttribute("data-guest-theme") === (temaAtual ? temaAtual.replace(/^theme-/, "") : "youtube"))));
+        }
+        definirSidebarGuest(window.innerWidth > 820 && !document.getElementById("guest-container").classList.contains("guest-sidebar-collapsed"));
         document.getElementById("login-screen")?.classList.add("hidden");
         document.getElementById("app-container")?.classList.add("hidden");
         document.getElementById("guest-container")?.classList.remove("hidden");
         document.body.classList.add("guest-mode-on");
         gs.ativo = true;
-        irPara("home");
+
+        const persistido = restaurarPersistencia();
+        const temHistorico = persistido && nav.pilha.length;
+        atualizarSetas();
+
+        if (op.restaurar !== false && temHistorico) {
+            aplicarEstado(nav.pilha[nav.pos]);
+        } else {
+            irPara("home");
+        }
+        salvarPersistencia();
     };
 
-    function sairDoModoGuest(aba) {
+    // Atalho usado pelo botão do cabeçalho da área logada
+    window.abrirMiniYoutube = function () { window.abrirModoGuest({ logado: true }); };
+
+    // Fecha o Mini YouTube e volta para o xHot (usuário logado)
+    function fecharMiniYoutube() {
         pararReproducao();
         document.getElementById("guest-container")?.classList.add("hidden");
         document.body.classList.remove("guest-mode-on");
         gs.ativo = false;
-        const logado = (() => { try { return !!firebase.auth().currentUser; } catch (e) { return false; } })();
-        if (logado) {
+        salvarPersistencia({ aberto: false });
+        document.getElementById("app-container")?.classList.remove("hidden");
+    }
+    window.fecharMiniYoutube = fecharMiniYoutube;
+
+    function sairDoModoGuest(aba) {
+        pararReproducao();
+        // Guarda tudo o que foi navegado para retomar exatamente aqui depois do login
+        salvarPersistencia({ aberto: true, retomar: true, pendente: acaoPendente || null });
+        document.getElementById("guest-container")?.classList.add("hidden");
+        document.body.classList.remove("guest-mode-on");
+        gs.ativo = false;
+        if (estaLogado()) {
             document.getElementById("app-container")?.classList.remove("hidden");
             return;
         }
@@ -5077,6 +5438,28 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
         if (typeof alternarAbasLogin === "function") alternarAbasLogin(aba === "cadastro" ? "cadastro" : "login");
     }
     window.sairDoModoGuest = sairDoModoGuest;
+
+    // ---------- retomada automática depois do login ----------
+    function retomarAposLogin() {
+        const d = lerPersistencia();
+        if (!d || !d.retomar) return;
+        salvarPersistencia({ retomar: false });
+        setTimeout(() => {
+            window.abrirModoGuest({ logado: true, restaurar: true });
+            const pend = d.pendente;
+            if (pend && pend.acao) {
+                setTimeout(() => { try { executarAcaoLiberada(pend, null); } catch (e) { } }, 900);
+            }
+            acaoPendente = null;
+            salvarPersistencia({ pendente: null, retomar: false });
+        }, 700);
+    }
+
+    try {
+        firebase.auth().onAuthStateChanged((u) => {
+            if (u) retomarAposLogin(); else aplicarModoLogado(false);
+        });
+    } catch (e) { }
 
     function pararReproducao() {
         const f = document.getElementById("guest-watch-frame");
@@ -5175,7 +5558,7 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
                 <span class="guest-card-channel" data-channel="${esc(s.channelId || "")}">${esc(decodificarHtml(s.channelTitle))}</span>
                 <span class="guest-card-meta">${views}${esc(tempoRelativo(s.publishedAt))}</span>
             </div>
-            <button class="guest-card-save guest-locked" data-guest-locked="salvar este vídeo no seu acervo" title="Salvar no meu acervo (requer conta)"><i class="fas fa-plus"></i></button>
+            <button class="guest-card-save guest-locked" data-guest-acao="salvar-video" data-yt-id="${esc(id)}" data-yt-title="${esc(decodificarHtml(s.title))}" data-yt-thumb="${esc(thumbDe(s))}" data-guest-locked="salvar este vídeo no seu acervo" title="Salvar no meu acervo"><i class="fas fa-plus"></i></button>
         </article>`;
     }
 
@@ -5191,6 +5574,7 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
                 <span class="guest-card-meta">${esc(inscritos)}</span>
                 <span class="guest-card-desc">${esc(decodificarHtml(s.description || "").slice(0, 110))}</span>
             </div>
+            <button class="guest-card-save guest-locked" data-guest-acao="salvar-canal" data-yt-channel="${esc(id)}" data-yt-title="${esc(decodificarHtml(s.title))}" data-guest-locked="vincular este canal ao seu acervo" title="Vincular canal ao acervo" aria-label="Vincular canal ao acervo"><i class="fas fa-plus"></i></button>
         </article>`;
     }
 
@@ -5208,6 +5592,7 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
                 <h4>${esc(decodificarHtml(s.title))}</h4>
                 <span class="guest-card-channel" data-channel="${esc(s.channelId || "")}">${esc(decodificarHtml(s.channelTitle))}</span>
             </div>
+            <button class="guest-card-save guest-locked" data-guest-acao="salvar-playlist" data-yt-playlist="${esc(id)}" data-yt-title="${esc(decodificarHtml(s.title))}" data-yt-thumb="${esc(thumbDe(s))}" data-guest-locked="salvar esta playlist no seu acervo" title="Salvar playlist no acervo" aria-label="Salvar playlist no acervo"><i class="fas fa-plus"></i></button>
         </article>`;
     }
 
@@ -5229,12 +5614,12 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
         });
         (escopo || document).querySelectorAll("[data-playlist]").forEach(el => {
             el.onclick = (ev) => {
-                if (ev.target.closest("[data-channel]")) return;
+                if (ev.target.closest("[data-guest-locked], [data-channel]")) return;
                 abrirPlaylist(el.getAttribute("data-playlist"));
             };
         });
         (escopo || document).querySelectorAll("[data-guest-locked]").forEach(btn => {
-            btn.onclick = (ev) => { ev.stopPropagation(); window.exigirLoginGuest(btn.getAttribute("data-guest-locked")); };
+            btn.onclick = (ev) => { ev.stopPropagation(); tratarBotaoRestrito(btn); };
         });
     }
 
@@ -5243,6 +5628,7 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
     async function carregarPopulares(categoriaId) {
         gs.view = "home";
         gs.nextPageToken = "";
+        empilhar({ tipo: "home", categoriaId: categoriaId || "" });
         mostrarCarregando("Carregando vídeos em alta...");
         try {
             const data = await ytApi("videos", {
@@ -5279,6 +5665,7 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
         gs.query = query;
         gs.filtro = tipo || "video";
         gs.nextPageToken = "";
+        empilhar({ tipo: "search", query: query, filtro: gs.filtro });
         document.getElementById("guest-chips").classList.add("hidden");
         const inp = document.getElementById("guest-search-input");
         if (inp && inp.value !== query) inp.value = query;
@@ -5355,6 +5742,7 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
     async function abrirCanal(channelId) {
         pararReproducao();
         gs.view = "channel";
+        empilhar({ tipo: "channel", id: channelId });
         window.scrollTo({ top: 0 });
         document.getElementById("guest-chips").classList.add("hidden");
         mostrarCarregando("Abrindo canal...");
@@ -5378,7 +5766,7 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
                             </span>
                             <p class="guest-chan-desc">${esc(decodificarHtml(c.snippet.description || "").slice(0, 300))}</p>
                         </div>
-                        <button class="guest-locked guest-chan-sub" data-guest-locked="vincular este canal ao seu acervo">
+                        <button class="guest-locked guest-chan-sub" data-guest-acao="vincular-este-canal" data-yt-channel="${esc(c.id)}" data-yt-title="${esc(decodificarHtml(c.snippet.title))}" data-guest-locked="vincular este canal ao seu acervo">
                             <i class="fas fa-link"></i> Vincular ao meu acervo
                         </button>
                     </div>
@@ -5474,6 +5862,7 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
     async function abrirPlaylist(playlistId) {
         pararReproducao();
         gs.view = "playlist";
+        empilhar({ tipo: "playlist", id: playlistId });
         window.scrollTo({ top: 0 });
         document.getElementById("guest-chips").classList.add("hidden");
         mostrarCarregando("Abrindo playlist...");
@@ -5488,7 +5877,7 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
                         <h2>${esc(decodificarHtml(p.snippet.title))}</h2>
                         <span class="guest-card-channel" data-channel="${esc(p.snippet.channelId)}">${esc(decodificarHtml(p.snippet.channelTitle))}</span>
                         <span class="guest-card-meta">${p.contentDetails?.itemCount || 0} vídeos</span>
-                        <button class="guest-locked guest-pl-save" data-guest-locked="salvar esta playlist no seu acervo"><i class="fas fa-plus"></i> Salvar no meu acervo</button>
+                        <button class="guest-locked guest-pl-save" data-guest-acao="salvar-playlist" data-yt-playlist="${esc(playlistId)}" data-yt-title="${esc(decodificarHtml(p.snippet.title))}" data-yt-thumb="${esc(thumbDe(p.snippet))}" data-guest-locked="salvar esta playlist no seu acervo"><i class="fas fa-plus"></i> Salvar no meu acervo</button>
                     </div>
                 </div>` : "";
             conteudo().innerHTML = cabecalho + `<div class="guest-grid" id="guest-grid"></div>`;
@@ -5516,6 +5905,8 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
     async function abrirVideo(videoId) {
         if (!videoId) return;
         gs.view = "watch";
+        gs.contexto = { tipo: "watch", videoId };
+        empilhar({ tipo: "watch", id: videoId });
         window.scrollTo({ top: 0 });
         document.getElementById("guest-chips").classList.add("hidden");
         mostrarCarregando("Abrindo vídeo...");
@@ -5547,8 +5938,8 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
                         </div>
                         <div class="guest-watch-actions">
                             <span class="guest-pill"><i class="fas fa-thumbs-up"></i> ${numeroCompacto(st.likeCount)}</span>
-                            <button class="guest-pill guest-locked" data-guest-locked="favoritar este vídeo"><i class="fas fa-heart"></i> Favoritar</button>
-                            <button class="guest-pill guest-locked" data-guest-locked="salvar este vídeo no seu acervo"><i class="fas fa-plus"></i> Salvar</button>
+                            <button class="guest-pill guest-locked" data-guest-acao="favoritar" data-yt-id="${esc(videoId)}" data-yt-title="${esc(decodificarHtml(s.title))}" data-yt-thumb="${esc(thumbDe(s))}" data-guest-locked="favoritar este vídeo"><i class="fas fa-heart"></i> Favoritar</button>
+                            <button class="guest-pill guest-locked" data-guest-acao="salvar-video" data-yt-id="${esc(videoId)}" data-yt-title="${esc(decodificarHtml(s.title))}" data-yt-thumb="${esc(thumbDe(s))}" data-guest-locked="salvar este vídeo no seu acervo"><i class="fas fa-plus"></i> Salvar</button>
                             <button class="guest-pill" id="guest-share"><i class="fas fa-share-nodes"></i> Compartilhar</button>
                         </div>
                     </div>
@@ -5558,9 +5949,10 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
                     </div>
                     <div class="guest-comments">
                         <h3><i class="fas fa-comments"></i> Comentários</h3>
-                        <div class="guest-comment-locked guest-locked" data-guest-locked="comentar neste vídeo">
+                        <div class="guest-comment-locked guest-locked" data-guest-acao="comentar" data-guest-locked="comentar neste vídeo">
                             <i class="fas fa-lock"></i> Entre com sua conta para comentar
                         </div>
+                        <div id="guest-comment-compose"></div>
                         <div id="guest-comments-list"></div>
                     </div>
                 </div>
@@ -5580,6 +5972,7 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
                 } catch (e) { }
             };
 
+            montarComposerGuest();
             carregarAvatarDoCanal(s.channelId);
             carregarComentariosGuest(videoId);
             carregarRelacionados(s.title, videoId);
@@ -5655,7 +6048,16 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
 
     function prepararBotaoLogin() {
         const btn = document.getElementById("btn-guest-access");
-        if (btn) btn.onclick = (e) => { e.preventDefault(); window.abrirModoGuest(); };
+        if (btn) btn.onclick = (e) => { e.preventDefault(); window.abrirModoGuest({ logado: false }); };
+
+        // Botões "Mini YouTube" da área logada (desktop no cabeçalho, mobile na engrenagem)
+        document.addEventListener("click", (e) => {
+            const alvo = e.target.closest("#btn-mini-youtube, #btn-mini-youtube-mobile");
+            if (!alvo) return;
+            e.preventDefault();
+            document.getElementById("dropdown-menu-mobile")?.classList.add("hidden");
+            window.abrirModoGuest({ logado: true });
+        });
     }
 
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", prepararBotaoLogin);
