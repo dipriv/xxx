@@ -2,17 +2,56 @@
 // CONFIGURAÇÃO INICIAL E CREDENCIAIS DO APP
 // ==========================================
 const firebaseConfig = {
-    apiKey: "AIzaSyCB_oJUAtVE8cSotjRT6Hiv7TAJzzeAPiw", 
-    authDomain: "dipriv-47697.firebaseapp.com",
-    databaseURL: "https://dipriv-47697-default-rtdb.firebaseio.com",
-    projectId: "dipriv-47697",
-    storageBucket: "dipriv-47697.firebasestorage.app",
-    messagingSenderId: "883733352905",
-    appId: "1:883733352905:web:109c683493875c1bc39818"
+    apiKey: "AIzaSyA3obnKmTrF4zH6pdV8ogqZ88r7uACy3BI", 
+    authDomain: "workin--music.firebaseapp.com",
+    databaseURL: "https://workin--music-default-rtdb.firebaseio.com",
+    projectId: "workin--music",
+    storageBucket: "workin--music.firebasestorage.app",
+    messagingSenderId: "588256543173",
+    appId: "1:588256543173:web:eddf01b30628df90ca8bac"
 };
 
 // CHAVE DE API GLOBAL DO YOUTUBE (PROTEGIDA POR RESTRIÇÃO DE DOMÍNIO HTTP)
 const YT_API_KEY_GLOBAL = "AIzaSyDHkLh2vGgxUJpVo11o1kKqtH1DQ5Toeu4";
+// CHAVE DE API RESERVA DO YOUTUBE (usada automaticamente se a primeira falhar)
+const YT_API_KEY_RESERVA = "COLE_AQUI_SUA_SEGUNDA_CHAVE_YOUTUBE_V3";
+
+// ==========================================
+// FALLBACK AUTOMÁTICO ENTRE CHAVES DO YOUTUBE
+// Intercepta qualquer chamada à YouTube Data API v3. Se a chave atual
+// falhar (cota excedida, chave inválida, bloqueio etc.), repete a mesma
+// requisição com a chave reserva e passa a usá-la nas próximas chamadas.
+// ==========================================
+(function instalarFallbackYoutube() {
+    const chaves = [YT_API_KEY_GLOBAL, YT_API_KEY_RESERVA].filter(k => k && !/^COLE_AQUI/.test(k));
+    let indiceAtivo = 0;
+    const fetchOriginal = window.fetch.bind(window);
+    const ehYoutubeApi = (u) => typeof u === "string" && u.indexOf("googleapis.com/youtube/v3") > -1;
+    const trocarChave = (u, chave) => {
+        try { const url = new URL(u); if (url.searchParams.has("key")) url.searchParams.set("key", chave); return url.toString(); }
+        catch (e) { return u; }
+    };
+    window.fetch = async function (recurso, opcoes) {
+        const urlStr = typeof recurso === "string" ? recurso : (recurso && recurso.url);
+        if (!ehYoutubeApi(urlStr) || chaves.length < 2 || urlStr.indexOf("key=") === -1) return fetchOriginal(recurso, opcoes);
+        let ultimaResposta = null, ultimoErro = null;
+        for (let t = 0; t < chaves.length; t++) {
+            const idx = (indiceAtivo + t) % chaves.length;
+            const url = trocarChave(urlStr, chaves[idx]);
+            try {
+                const resp = await fetchOriginal(typeof recurso === "string" ? url : new Request(url, recurso), opcoes);
+                // 400/403/429 = chave inválida, cota esgotada ou restrição -> tenta a próxima
+                if (resp.ok || [400, 403, 429].indexOf(resp.status) === -1) {
+                    if (idx !== indiceAtivo) { indiceAtivo = idx; try { CONFIG.YT_API_KEY = chaves[idx]; } catch (e) {} }
+                    return resp;
+                }
+                ultimaResposta = resp;
+            } catch (e) { ultimoErro = e; }
+        }
+        if (ultimaResposta) return ultimaResposta;
+        throw ultimoErro || new Error("Falha na YouTube API");
+    };
+})();
 
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
@@ -83,6 +122,27 @@ let ordemAtual = 'catalogo'; // padrao das MIDIAS: ordem de catalogacao
 let ordemAtualNomes = 'az'; // padrao de CATEGORIAS/SUBCATEGORIAS: ordem alfabetica (A -> Z)
 let duracoesCache = {};
 let buscandoDuracoes = false;
+
+
+// ==========================================
+// THUMBNAILS DO YOUTUBE EM ALTA DEFINIÇÃO
+// Sempre prefere maxres > standard > high > medium > default
+// ==========================================
+function melhorThumbYoutube(snippet) {
+    const t = (snippet && snippet.thumbnails) || {};
+    return (t.maxres || t.standard || t.high || t.medium || t.default || {}).url || '';
+}
+
+// URL direta pela ID do vídeo: tenta maxresdefault e cai para hqdefault se não existir
+function thumbAltaPorId(videoId) {
+    return videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : '';
+}
+
+// Encadeia fallback de resolução na tag <img>: maxres -> sd -> hq -> mq
+function atributoFallbackThumb(videoId) {
+    if (!videoId) return '';
+    return ` onerror="this.onerror=null; var b='https://img.youtube.com/vi/${videoId}/'; if(this.src.indexOf('maxresdefault')>-1)this.src=b+'sddefault.jpg'; else if(this.src.indexOf('sddefault')>-1)this.src=b+'hqdefault.jpg'; else if(this.src.indexOf('hqdefault')>-1)this.src=b+'mqdefault.jpg';"`;
+}
 
 function comparadorTexto(a, b) {
     return String(a || '').localeCompare(String(b || ''), 'pt-BR', { sensitivity: 'base', numeric: true });
@@ -755,7 +815,9 @@ function createCard(title, imgSrc, showAddButton = false, isPlaylist = false, cl
         const txt = formatarDuracao(seg);
         if (txt) selo = `<span class="duration-badge"><i class="fas fa-clock"></i> ${txt}</span>`;
     }
-    let htmlContent = `<div class="card-thumb"><img src="${imgSrc || 'https://placehold.co/160x90?text=Sem+Capa'}">${selo}</div><h4 title="${String(title || '').replace(/"/g, '&quot;')}">${title}</h4>`;
+    const vidCard = extractYoutubeId((shareInfo && shareInfo.link) || '') || extractYoutubeId(imgSrc || '');
+    const srcCard = (!imgSrc && vidCard) ? thumbAltaPorId(vidCard) : (imgSrc || 'https://placehold.co/160x90?text=Sem+Capa');
+    let htmlContent = `<div class="card-thumb"><img src="${srcCard}"${atributoFallbackThumb(vidCard)}>${selo}</div><h4 title="${String(title || '').replace(/"/g, '&quot;')}">${title}</h4>`;
     if (favInfo) {
         const ativo = ehFavorito(favInfo) ? ' ativo' : '';
         htmlContent += `<div class="fav-badge${ativo}" title="Favoritar"><i class="fa-heart ${ativo ? 'fas' : 'far'}"></i></div>`;
@@ -839,7 +901,7 @@ async function buscarVideosRecentesDoCanal(playlistId) {
             const itensInvertidos = data.items.reverse();
             currentPlaylist = itensInvertidos.map(item => ({
                 título: item.snippet.title, link: `https://www.youtube.com/embed/${item.snippet.resourceId.videoId}`,
-                capa: item.snippet.thumbnails.medium ? item.snippet.thumbnails.medium.url : item.snippet.thumbnails.default.url,
+                capa: melhorThumbYoutube(item.snippet) || 'https://placehold.co/300x200?text=Sem+Capa',
                 categoria: selectedCategory, subcategoria: "Vídeos Recentes", isDinâmico: true
             }));
             if (grid) { 
@@ -874,12 +936,12 @@ function configurarEventosBuscaCanal() {
             data.items.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'channel-search-item';
-                div.innerHTML = `<img src="${item.snippet.thumbnails.default.url}"><div class="info"><h4>${item.snippet.title}</h4></div>`;
+                div.innerHTML = `<img src="${melhorThumbYoutube(item.snippet)}"><div class="info"><h4>${item.snippet.title}</h4></div>`;
                 div.onclick = () => {
                     canalSelecionadoProvisorio = { 
                         channelId: item.snippet.channelId, 
                         title: item.snippet.title, 
-                        thumb: item.snippet.thumbnails.default.url, 
+                        thumb: melhorThumbYoutube(item.snippet), 
                         description: item.snippet.description 
                     };
                     document.getElementById("chan-thumb").src = canalSelecionadoProvisorio.thumb;
@@ -941,7 +1003,7 @@ async function searchYouTubeGlobal(query) {
         if(data.items) {
             data.items.forEach(item => {
                 const isPl = item.id.kind === 'youtube#playlist';
-                lastYtSearchResults.push({ type: isPl ? 'playlist' : 'video', youtubeId: isPl ? item.id.playlistId : item.id.videoId, title: item.snippet.title, thumb: item.snippet.thumbnails.medium ? item.snippet.thumbnails.medium.url : 'https://placehold.co/300x200?text=Sem+Capa' });
+                lastYtSearchResults.push({ type: isPl ? 'playlist' : 'video', youtubeId: isPl ? item.id.playlistId : item.id.videoId, title: item.snippet.title, thumb: melhorThumbYoutube(item.snippet) || 'https://placehold.co/300x200?text=Sem+Capa' });
             });
         }
         renderMosaic();
@@ -1246,7 +1308,7 @@ async function saveMediaToDatabase(e) {
             
             for(let item of data.items) {
                 let vId = item.snippet.resourceId.videoId; let título = item.snippet.title;
-                let capa = item.snippet.thumbnails.medium ? item.snippet.thumbnails.medium.url : item.snippet.thumbnails.default.url; let linkVideo = `https://www.youtube.com/embed/${vId}`;
+                let capa = melhorThumbYoutube(item.snippet); let linkVideo = `https://www.youtube.com/embed/${vId}`;
                 database.push({ título, link: linkVideo, capa, categoria, subcategoria });
             }
             await empurrarBancoIntegralParaServidor();
@@ -1604,7 +1666,7 @@ function setupEventListeners() {
             try {
                 if (vId) {
                     const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${vId}&key=${CONFIG.YT_API_KEY}`); const data = await res.json();
-                    if (data.items && data.items.length > 0) { const snip = data.items[0].snippet; document.getElementById('prev-title').value = snip.title; document.getElementById('prev-thumb').src = snip.thumbnails.medium ? snip.thumbnails.medium.url : snip.thumbnails.default.url; } 
+                    if (data.items && data.items.length > 0) { const snip = data.items[0].snippet; document.getElementById('prev-title').value = snip.title; document.getElementById('prev-thumb').src = melhorThumbYoutube(snip); } 
                 }
             } catch(err) {} finally { btn.innerText = "Capturar Dados"; }
         }
@@ -5286,7 +5348,7 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
                 const track = {
                     "título": info.titulo || "Vídeo do YouTube",
                     link: `https://www.youtube.com/embed/${info.videoId}`,
-                    capa: info.capa || `https://img.youtube.com/vi/${info.videoId}/hqdefault.jpg`,
+                    capa: info.capa || thumbAltaPorId(info.videoId),
                     categoria: "Mini YouTube",
                     subcategoria: "Favoritos"
                 };
@@ -6062,4 +6124,101 @@ function tocarAudioNoPlayer(track, link, rawPlayerEl) {
 
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", prepararBotaoLogin);
     else prepararBotaoLogin();
+})();
+
+
+// ==========================================
+// BOTÃO VOLTAR NATIVO (Android / iPhone) E VOLTAR DO NAVEGADOR (desktop)
+// Cada toque em "voltar" desfaz a última ação dentro do app
+// (fecha janelas, menus, player, retrocede telas) sem fechar o app.
+// Também funciona com Alt+←, botão "voltar" do mouse e do navegador.
+// ==========================================
+(function instalarVoltarNativo() {
+    const pilhaTelas = [];
+    let restaurandoTela = false;
+
+    const estadoAtual = () => ({ v: currentView, c: selectedCategory, s: selectedSubcategory });
+    const iguais = (a, b) => a && b && a.v === b.v && a.c === b.c && a.s === b.s;
+
+    // Registra o histórico de telas sempre que o mosaico é redesenhado
+    if (typeof renderMosaic === "function") {
+        const renderOriginal = renderMosaic;
+        let ultimo = estadoAtual();
+        renderMosaic = function () {
+            const novo = estadoAtual();
+            if (!restaurandoTela && !iguais(novo, ultimo)) {
+                pilhaTelas.push(ultimo);
+                if (pilhaTelas.length > 100) pilhaTelas.shift();
+            }
+            ultimo = novo;
+            return renderOriginal.apply(this, arguments);
+        };
+        window.renderMosaic = renderMosaic;
+    }
+
+    function clicar(el) { if (el) { el.click(); return true; } return false; }
+
+    function desfazerUltimaAcao() {
+        // 1) Menu de compartilhamento
+        const share = document.getElementById("share-sheet");
+        if (share) { share.remove(); return true; }
+
+        // 2) Aviso de login do modo visitante
+        const aviso = document.getElementById("guest-login-required");
+        if (aviso && !aviso.classList.contains("hidden")) { aviso.classList.add("hidden"); return true; }
+
+        // 3) Janelas (modais) abertas — fecha a que está por cima
+        const modais = Array.from(document.querySelectorAll(".modal-overlay, .profile-modal-overlay"))
+            .filter(m => !m.classList.contains("hidden") && getComputedStyle(m).display !== "none");
+        if (modais.length) {
+            const topo = modais[modais.length - 1];
+            if (!clicar(topo.querySelector(".btn-close, .profile-close-btn, [id^='btn-close'], [id^='btn-cancel']"))) topo.classList.add("hidden");
+            return true;
+        }
+
+        // 4) Menu lateral aberto no celular
+        const sidebar = document.getElementById("sidebar");
+        if (sidebar && sidebar.classList.contains("open") && window.innerWidth <= 768) {
+            const bd = document.getElementById("sidebar-backdrop");
+            if (!clicar(bd)) sidebar.classList.remove("open");
+            return true;
+        }
+
+        // 5) Mini YouTube / modo visitante
+        const guest = document.getElementById("guest-container");
+        if (guest && !guest.classList.contains("hidden")) {
+            const voltarGuest = document.getElementById("guest-btn-back");
+            if (voltarGuest && !voltarGuest.disabled) { voltarGuest.click(); return true; }
+            const voltarApp = document.getElementById("guest-btn-voltar-app");
+            if (voltarApp && getComputedStyle(voltarApp).display !== "none") { voltarApp.click(); return true; }
+            return false;
+        }
+
+        // 6) Player aberto
+        const fecharPlayer = document.getElementById("btn-close-player");
+        if (fecharPlayer && fecharPlayer.offsetParent !== null) { fecharPlayer.click(); return true; }
+
+        // 7) Telas anteriores (categorias > subcategorias > mídias > buscas)
+        while (pilhaTelas.length) {
+            const anterior = pilhaTelas.pop();
+            if (iguais(anterior, estadoAtual())) continue;
+            currentView = anterior.v; selectedCategory = anterior.c; selectedSubcategory = anterior.s;
+            restaurandoTela = true;
+            try { renderMosaic(); try { renderSidebar(); } catch (e) {} } finally { restaurandoTela = false; }
+            return true;
+        }
+        return false;
+    }
+
+    // Mantém sempre uma entrada "guarda" no histórico para que o voltar
+    // nativo nunca saia do app.
+    try {
+        history.replaceState({ xHotBase: true }, "", location.href);
+        history.pushState({ xHotGuard: true }, "", location.href);
+    } catch (e) {}
+
+    window.addEventListener("popstate", function () {
+        try { desfazerUltimaAcao(); } catch (e) { console.warn("Voltar:", e); }
+        try { history.pushState({ xHotGuard: true }, "", location.href); } catch (e) {}
+    });
 })();
